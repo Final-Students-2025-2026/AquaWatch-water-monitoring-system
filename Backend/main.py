@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from auth import get_password_hash
 from config import DEFAULT_ORGANIZATION_ID
-from database import db_pool, create_pool, close_pool
+from database import create_pool, close_pool, db_pool
 
 from routers import auth, devices, readings, alerts, thresholds, settings, dashboard, websocket
 
