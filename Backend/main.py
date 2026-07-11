@@ -11,7 +11,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from auth import get_password_hash
 from config import DEFAULT_ORGANIZATION_ID
-from database import create_pool, close_pool, db_pool
+from database import create_pool, close_pool
+import database
 
 from routers import auth, devices, readings, alerts, thresholds, settings, dashboard, websocket
 
@@ -31,7 +32,7 @@ async def lifespan(app: FastAPI):
     await create_pool()
 
     # Ensure default organization and admin user exist
-    async with db_pool.acquire() as conn:
+    async with database.db_pool.acquire() as conn:
         await conn.execute("""
             INSERT INTO organizations (organization_id, organization_name, organization_type)
             VALUES ($1, 'Default Organization', 'water_monitoring')
