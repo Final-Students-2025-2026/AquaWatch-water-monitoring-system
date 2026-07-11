@@ -10,7 +10,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from auth import get_password_hash
-from config import DEFAULT_ORGANIZATION_ID
+from config import DEFAULT_ORGANIZATION_ID, ADMIN_USERNAME, ADMIN_PASSWORD
 from database import create_pool, close_pool
 import database
 
@@ -39,14 +39,14 @@ async def lifespan(app: FastAPI):
             ON CONFLICT (organization_id) DO NOTHING
         """, DEFAULT_ORGANIZATION_ID)
 
-        default_hash = get_password_hash("admin123")
+        default_hash = get_password_hash(ADMIN_PASSWORD)
         await conn.execute("""
             INSERT INTO users (user_id, organization_id, username, password_hash, role, is_active)
-            VALUES (1, $1, 'admin', $2, 'administrator', TRUE)
-            ON CONFLICT (username) DO NOTHING
-        """, DEFAULT_ORGANIZATION_ID, default_hash)
+            VALUES (1, $1, $2, $3, 'administrator', TRUE)
+            ON CONFLICT (username) DO UPDATE SET password_hash = $3
+        """, DEFAULT_ORGANIZATION_ID, ADMIN_USERNAME, default_hash)
 
-        logger.info("Default admin user ensured")
+        logger.info(f"Default admin user ensured (username: {ADMIN_USERNAME})")
 
     yield
 
