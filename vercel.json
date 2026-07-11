@@ -3,5 +3,5 @@
   "outputDirectory": "dist",
   "installCommand": "pnpm install --no-frozen-lockfile",
   "framework": null,
-  "workingDirectory": "Frontend"
+  "rootDirectory": "Frontend"
 }
