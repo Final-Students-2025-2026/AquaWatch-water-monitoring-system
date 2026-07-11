@@ -1,4 +1,5 @@
 packages:
+  - Frontend
   - artifacts/*
   - lib/*
   - lib/integrations/*

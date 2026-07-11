@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "pnpm --filter @workspace/water-dashboard run dev",
-    "build": "pnpm --filter @workspace/water-dashboard run build",
-    "preview": "pnpm --filter @workspace/water-dashboard run serve"
+    "dev": "pnpm --filter water-dashboard run dev",
+    "build": "pnpm --filter water-dashboard run build",
+    "preview": "pnpm --filter water-dashboard run serve"
   },
   "devDependencies": {
     "prettier": "^3.8.3",
