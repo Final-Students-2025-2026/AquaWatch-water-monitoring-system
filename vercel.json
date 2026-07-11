@@ -1,6 +1,6 @@
 {
-  "buildCommand": "pnpm run build",
+  "buildCommand": "cd Frontend && pnpm run build",
   "outputDirectory": "Frontend/dist",
-  "installCommand": "pnpm install --no-frozen-lockfile",
+  "installCommand": "cd Frontend && pnpm install --no-frozen-lockfile",
   "framework": null
 }
