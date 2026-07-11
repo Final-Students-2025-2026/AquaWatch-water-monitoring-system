@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from auth import get_password_hash
 from config import DEFAULT_ORGANIZATION_ID
-from database import db_pool, create_pool, close_pool, initialize_schema
+from database import db_pool, create_pool, close_pool
 
 from routers import auth, devices, readings, alerts, thresholds, settings, dashboard, websocket
 
@@ -29,9 +29,6 @@ async def lifespan(app: FastAPI):
     logger.info("Starting backend...")
 
     await create_pool()
-
-    # Initialize database schema
-    await initialize_schema()
 
     # Ensure default organization and admin user exist
     async with db_pool.acquire() as conn:

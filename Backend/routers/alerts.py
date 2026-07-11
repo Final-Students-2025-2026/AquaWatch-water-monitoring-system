@@ -14,8 +14,8 @@ router = APIRouter(prefix="/alerts", tags=["Alerts"])
 
 @router.get("")
 async def list_alerts(
-    status: Optional[str] = Query(None, regex="^(active|acknowledged|resolved)$"),
-    severity: Optional[str] = Query(None, regex="^(low|medium|high|critical)$"),
+    status: Optional[str] = Query(None, pattern="^(active|acknowledged|resolved)$"),
+    severity: Optional[str] = Query(None, pattern="^(low|medium|high|critical)$"),
     device_id: Optional[int] = None,
     limit: int = Query(50, ge=1, le=500)
 ):
