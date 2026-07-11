@@ -114,17 +114,17 @@ class DeviceResponse(BaseModel):
 
 # Alert models
 class AlertUpdate(BaseModel):
-    status: str = Field(..., regex="^(active|acknowledged|resolved)$")
+    status: str = Field(..., pattern="^(active|acknowledged|resolved)$")
 
 
 class AlertSeverityUpdate(BaseModel):
-    severity: str = Field(..., regex="^(low|medium|high|critical)$")
+    severity: str = Field(..., pattern="^(low|medium|high|critical)$")
 
 
 # Threshold models
 class ThresholdCreate(BaseModel):
     device_id: int
-    parameter: str = Field(..., regex="^(ph|tds|turbidity|temperature|ec)$")
+    parameter: str = Field(..., pattern="^(ph|tds|turbidity|temperature|ec)$")
     min_value: Optional[float] = None
     max_value: Optional[float] = None
     warning_value: Optional[float] = None
