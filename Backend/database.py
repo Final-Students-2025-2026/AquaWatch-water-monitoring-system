@@ -18,14 +18,22 @@ db_pool: Optional[asyncpg.Pool] = None
 
 async def create_pool():
     global db_pool
+    
+    if not DATABASE_URL:
+        raise ValueError("DATABASE_URL environment variable is not set")
+    
+    logger.info(f"Attempting to connect to database...")
+    logger.info(f"DATABASE_URL: {DATABASE_URL[:20]}..." if DATABASE_URL else "None")
+    
     for attempt in range(MAX_RETRIES):
         try:
-            db_pool = await asyncpg.create_pool(
+            pool = await asyncpg.create_pool(
                 DATABASE_URL,
                 min_size=1,
                 max_size=10
             )
-            logger.info("Database connection pool created")
+            db_pool = pool
+            logger.info(f"Database connection pool created successfully, db_pool is now: {db_pool}")
             return
         except Exception as e:
             logger.error(f"Database connection attempt {attempt + 1} failed: {e}")
@@ -33,7 +41,7 @@ async def create_pool():
                 import asyncio
                 await asyncio.sleep(RETRY_DELAY)
             else:
-                logger.error("Could not connect to database")
+                logger.error("Could not connect to database after all retries")
                 raise
 
 
