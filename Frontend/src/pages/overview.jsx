@@ -91,7 +91,7 @@ export default function Overview() {
       }
     }
     loadData();
-  }, [history]);
+  }, []);
 
   if (isLoading) {
     return (
