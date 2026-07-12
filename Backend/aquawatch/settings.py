@@ -63,8 +63,7 @@ DATABASES = {
         default=os.environ.get('DATABASE_URL', 'postgresql://user:password@localhost:5432/aquawatch'),
         conn_max_age=600,
         conn_health_checks=True,
-        ssl_require=True,
-        options={'sslmode': 'require'}
+        ssl_require=True
     )
 }
 
