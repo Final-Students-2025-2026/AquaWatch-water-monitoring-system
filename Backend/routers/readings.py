@@ -74,7 +74,7 @@ async def get_latest_reading(device_id: int = Query(..., description="Device ID"
             """, device_id)
 
             if row is None:
-                raise HTTPException(status_code=404, detail=f"No readings found for device {device_id}")
+                return {"message": f"No readings found for device {device_id}"}
 
             return dict(row)
     except HTTPException:

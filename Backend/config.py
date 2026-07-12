@@ -6,9 +6,8 @@ import os
 import logging
 from datetime import timedelta
 
-from dotenv import load_dotenv
-
-load_dotenv()
+# Don't load .env file in production - use Render environment variables directly
+# load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

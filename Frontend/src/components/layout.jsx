@@ -4,15 +4,16 @@ import { Droplet, LayoutDashboard, LineChart, Bell, Cpu, SlidersHorizontal, Sett
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { mockApi } from "@/lib/mockApi";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
+import { SettingsModal } from "@/pages/settings";
 
 export function Layout({ children }) {
   const [location, setLocation] = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeAlertsCount, setActiveAlertsCount] = useState(0);
+  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const { user, logout } = useAuth();
   const { info } = useToast();
 
@@ -32,9 +33,24 @@ export function Layout({ children }) {
   };
 
   useEffect(() => {
-    mockApi.listAlerts().then(alerts => {
-      setActiveAlertsCount(alerts.filter(a => a.status === "active").length);
-    });
+    async function loadAlertCount() {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/alerts`, {
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        });
+        if (response.ok) {
+          const alerts = await response.json();
+          const activeCount = Array.isArray(alerts) ? alerts.filter(a => a.status === "active").length : 0;
+          setActiveAlertsCount(activeCount);
+        }
+      } catch (error) {
+        console.error("Failed to load alert count:", error);
+      }
+    }
+    loadAlertCount();
   }, []);
 
   const handleLogout = () => {
@@ -54,7 +70,6 @@ export function Layout({ children }) {
     },
     { href: "/sensors", label: "Sensors", icon: Cpu },
     { href: "/thresholds", label: "Thresholds", icon: SlidersHorizontal },
-    { href: "/settings", label: "Settings", icon: Settings },
   ];
 
   function NavContent({ onNavigate, collapsed = false }) {
@@ -142,6 +157,33 @@ export function Layout({ children }) {
               <div className="flex items-center gap-3">
                 <LogOut className="w-4 h-4 text-sidebar-foreground/50" />
                 <span className="text-sm">Logout</span>
+              </div>
+            </button>
+          )}
+
+          {/* Settings button */}
+          {collapsed ? (
+            <Tooltip delayDuration={0}>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => setSettingsModalOpen(true)}
+                  className="flex items-center justify-center p-2.5 rounded-lg transition-colors mx-auto w-10 h-10 text-sidebar-foreground/75 hover:bg-sidebar-accent/40 hover:text-sidebar-foreground"
+                >
+                  <Settings className="w-5 h-5 text-sidebar-foreground/70" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p>Settings</p>
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <button
+              onClick={() => setSettingsModalOpen(true)}
+              className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors text-sidebar-foreground/75 hover:bg-sidebar-accent/40 hover:text-sidebar-foreground"
+            >
+              <div className="flex items-center gap-3">
+                <Settings className="w-4 h-4 text-sidebar-foreground/50" />
+                <span className="text-sm">Settings</span>
               </div>
             </button>
           )}
@@ -305,6 +347,9 @@ export function Layout({ children }) {
           </main>
         </div>
       </TooltipProvider>
+
+      {/* Settings Modal */}
+      <SettingsModal open={settingsModalOpen} onOpenChange={setSettingsModalOpen} />
     </div>
   );
 }

@@ -199,7 +199,14 @@ async function fetchTelemetryData() {
     if (!response.ok) {
       throw new Error(`HTTP error ${response.status}`);
     }
-    return await response.json();
+    const data = await response.json();
+    
+    // Check if the response contains a message (no readings found)
+    if (data.message) {
+      return null; // Return null to indicate no data
+    }
+    
+    return data;
   }
 
   // For MOCK and WebSocket fallback: return mock data in backend schema format
@@ -220,11 +227,11 @@ async function fetchTelemetryData() {
 
 export function TelemetryProvider({ children }) {
   const [telemetry, setTelemetry] = useState({
-    temp: BASELINE.temp,
-    tds: BASELINE.tds,
-    turb: BASELINE.turb,
-    ph: BASELINE.ph,
-    ec: BASELINE.ec,
+    temp: null,
+    tds: null,
+    turb: null,
+    ph: null,
+    ec: null,
     safetyStatus: 0,
     isAlert: false,
     severity: null,
@@ -236,6 +243,25 @@ export function TelemetryProvider({ children }) {
   const [history, setHistory] = useState([]);
 
   const processTelemetryData = useCallback((rawData) => {
+    if (!rawData) {
+      // No data available, set all values to null
+      setTelemetry((prev) => ({
+        ...prev,
+        temp: null,
+        tds: null,
+        turb: null,
+        ph: null,
+        ec: null,
+        safetyStatus: 0,
+        isAlert: false,
+        severity: null,
+        alertReason: null,
+        timestamp: new Date().toISOString(),
+        isConnected: false,
+      }));
+      return;
+    }
+
     const data = normalizeBackendData(rawData);
     const safetyStatus = calculateSafetyStatus(data, {
       isAlert: data.isAlert,

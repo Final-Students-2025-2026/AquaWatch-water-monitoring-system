@@ -1,17 +1,16 @@
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
-import { User, Shield, Bell, Moon, Sun, AlertCircle, Check } from "lucide-react";
+import { User, Shield, Bell, Moon, Sun, AlertCircle, Check, X, Settings2 } from "lucide-react";
 
-export default function Settings() {
+export function SettingsModal({ open, onOpenChange }) {
   const { user, updateUser } = useAuth();
-  const [activeTab, setActiveTab] = useState("profile");
+  const [activeSection, setActiveSection] = useState("profile");
 
   // Profile form state
   const [username, setUsername] = useState(user?.username || "");
@@ -172,7 +171,6 @@ export default function Settings() {
     } else {
       document.documentElement.classList.remove("dark");
     }
-    // Store preference
     localStorage.setItem("aquawatch_theme", newMode ? "dark" : "light");
   };
 
@@ -183,56 +181,73 @@ export default function Settings() {
     }));
   };
 
+  const sections = [
+    { id: "profile", label: "Profile", icon: User },
+    { id: "security", label: "Security", icon: Shield },
+    { id: "notifications", label: "Notifications", icon: Bell },
+    { id: "appearance", label: "Appearance", icon: isDarkMode ? Moon : Sun },
+  ];
+
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">Settings</h2>
-        <p className="text-muted-foreground text-sm mt-1">
-          Manage your account, security, and application preferences
-        </p>
-      </div>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl h-[600px] p-0 overflow-hidden">
+        <div className="flex h-full">
+          {/* Sidebar */}
+          <div className="w-64 bg-gradient-to-b from-primary/10 to-background border-r border-border">
+            <div className="p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                  <Settings2 className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <DialogTitle className="text-lg font-semibold">Settings</DialogTitle>
+                  <p className="text-xs text-muted-foreground">Customize your experience</p>
+                </div>
+              </div>
+              
+              <nav className="space-y-1">
+                {sections.map((section) => {
+                  const Icon = section.icon;
+                  const isActive = activeSection === section.id;
+                  return (
+                    <button
+                      key={section.id}
+                      onClick={() => setActiveSection(section.id)}
+                      className={[
+                        "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
+                        isActive
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                      ].join(" ")}
+                    >
+                      <Icon className="w-4 h-4" />
+                      {section.label}
+                    </button>
+                  );
+                })}
+              </nav>
+            </div>
+            
+            <div className="mt-auto p-6 border-t border-border">
+              <Button variant="outline" className="w-full" onClick={() => onOpenChange(false)}>
+                <X className="w-4 h-4 mr-2" />
+                Close
+              </Button>
+            </div>
+          </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4 lg:w-fit">
-          <TabsTrigger value="profile" className="gap-2">
-            <User className="w-4 h-4 hidden sm:inline" />
-            Profile
-          </TabsTrigger>
-          <TabsTrigger value="security" className="gap-2">
-            <Shield className="w-4 h-4 hidden sm:inline" />
-            Security
-          </TabsTrigger>
-          <TabsTrigger value="notifications" className="gap-2">
-            <Bell className="w-4 h-4 hidden sm:inline" />
-            Notifications
-          </TabsTrigger>
-          <TabsTrigger value="appearance" className="gap-2">
-            {isDarkMode ? (
-              <Moon className="w-4 h-4 hidden sm:inline" />
-            ) : (
-              <Sun className="w-4 h-4 hidden sm:inline" />
-            )}
-            Appearance
-          </TabsTrigger>
-        </TabsList>
-
-        {/* Profile Tab */}
-        <TabsContent value="profile" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="w-5 h-5 text-primary" />
-                Profile Information
-              </CardTitle>
-              <CardDescription>
-                Update your account username and display settings
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleUpdateProfile} className="space-y-4">
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto p-6">
+            {activeSection === "profile" && (
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-xl font-semibold mb-1">Profile Information</h3>
+                  <p className="text-sm text-muted-foreground">Update your account username</p>
+                </div>
+                
                 {profileSuccess && (
-                  <Alert className="bg-green-50 border-green-200 text-green-800">
-                    <Check className="h-4 w-4 text-green-600" />
+                  <Alert className="bg-green-50 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400">
+                    <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
                     <AlertDescription>{profileSuccess}</AlertDescription>
                   </Alert>
                 )}
@@ -242,250 +257,236 @@ export default function Settings() {
                     <AlertDescription>{profileError}</AlertDescription>
                   </Alert>
                 )}
-                <div className="space-y-2">
-                  <Label htmlFor="username">Username</Label>
-                  <Input
-                    id="username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    placeholder="Enter username"
-                  />
-                </div>
-                <Button type="submit">Update Profile</Button>
-              </form>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Security Tab */}
-        <TabsContent value="security" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="w-5 h-5 text-primary" />
-                Change Password
-              </CardTitle>
-              <CardDescription>
-                Update your account password
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleUpdatePassword} className="space-y-4">
-                {passwordSuccess && (
-                  <Alert className="bg-green-50 border-green-200 text-green-800">
-                    <Check className="h-4 w-4 text-green-600" />
-                    <AlertDescription>{passwordSuccess}</AlertDescription>
-                  </Alert>
-                )}
-                {passwordError && (
-                  <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>{passwordError}</AlertDescription>
-                  </Alert>
-                )}
-                <div className="space-y-2">
-                  <Label htmlFor="current-password">Current Password</Label>
-                  <Input
-                    id="current-password"
-                    type="password"
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    placeholder="Enter current password"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="new-password">New Password</Label>
-                  <Input
-                    id="new-password"
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="Enter new password"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="confirm-password">Confirm New Password</Label>
-                  <Input
-                    id="confirm-password"
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Confirm new password"
-                  />
-                </div>
-                <Button type="submit">Update Password</Button>
-              </form>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="w-5 h-5 text-amber-500" />
-                Security PIN
-              </CardTitle>
-              <CardDescription>
-                Update your 4-6 digit security PIN for critical actions
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleUpdatePin} className="space-y-4">
-                {pinSuccess && (
-                  <Alert className="bg-green-50 border-green-200 text-green-800">
-                    <Check className="h-4 w-4 text-green-600" />
-                    <AlertDescription>{pinSuccess}</AlertDescription>
-                  </Alert>
-                )}
-                {pinError && (
-                  <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>{pinError}</AlertDescription>
-                  </Alert>
-                )}
-                <div className="space-y-2">
-                  <Label htmlFor="current-pin">Current PIN</Label>
-                  <Input
-                    id="current-pin"
-                    type="password"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    maxLength={6}
-                    value={currentPin}
-                    onChange={(e) => setCurrentPin(e.target.value.replace(/\D/g, ""))}
-                    placeholder="Enter current PIN"
-                    className="tracking-widest"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="new-pin">New PIN (4-6 digits)</Label>
-                  <Input
-                    id="new-pin"
-                    type="password"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    maxLength={6}
-                    value={newPin}
-                    onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ""))}
-                    placeholder="Enter new PIN"
-                    className="tracking-widest"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="confirm-pin">Confirm New PIN</Label>
-                  <Input
-                    id="confirm-pin"
-                    type="password"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    maxLength={6}
-                    value={confirmPin}
-                    onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, ""))}
-                    placeholder="Confirm new PIN"
-                    className="tracking-widest"
-                  />
-                </div>
-                <Button type="submit">Update PIN</Button>
-              </form>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Notifications Tab */}
-        <TabsContent value="notifications" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Bell className="w-5 h-5 text-primary" />
-                Notification Preferences
-              </CardTitle>
-              <CardDescription>
-                Configure how you want to receive alerts and notifications
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="email-alerts">Email Alerts</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Receive alerts via email
-                  </p>
-                </div>
-                <Switch
-                  id="email-alerts"
-                  checked={notifications.emailAlerts}
-                  onCheckedChange={() => handleNotificationChange("emailAlerts")}
-                />
+                
+                <form onSubmit={handleUpdateProfile} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="username">Username</Label>
+                    <Input
+                      id="username"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      placeholder="Enter username"
+                      className="max-w-md"
+                    />
+                  </div>
+                  <Button type="submit">Update Profile</Button>
+                </form>
               </div>
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="push-alerts">Push Notifications</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Receive browser push notifications
-                  </p>
-                </div>
-                <Switch
-                  id="push-alerts"
-                  checked={notifications.pushAlerts}
-                  onCheckedChange={() => handleNotificationChange("pushAlerts")}
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="critical-only">Critical Alerts Only</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Only notify for critical severity alerts
-                  </p>
-                </div>
-                <Switch
-                  id="critical-only"
-                  checked={notifications.criticalOnly}
-                  onCheckedChange={() => handleNotificationChange("criticalOnly")}
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+            )}
 
-        {/* Appearance Tab */}
-        <TabsContent value="appearance" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                {isDarkMode ? (
-                  <Moon className="w-5 h-5 text-primary" />
-                ) : (
-                  <Sun className="w-5 h-5 text-primary" />
-                )}
-                Theme Preference
-              </CardTitle>
-              <CardDescription>
-                Choose your preferred application theme
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="dark-mode">
-                    {isDarkMode ? "Dark Mode" : "Light Mode"}
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    Currently using {isDarkMode ? "dark" : "light"} theme
-                  </p>
+            {activeSection === "security" && (
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-xl font-semibold mb-1">Security</h3>
+                  <p className="text-sm text-muted-foreground">Manage your password and PIN</p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Sun className={["w-4 h-4", isDarkMode ? "text-muted-foreground" : "text-amber-500"].join(" ")} />
-                  <Switch
-                    id="dark-mode"
-                    checked={isDarkMode}
-                    onCheckedChange={handleThemeToggle}
-                  />
-                  <Moon className={["w-4 h-4", isDarkMode ? "text-indigo-400" : "text-muted-foreground"].join(" ")} />
+
+                {/* Password */}
+                <div className="space-y-4 p-4 rounded-lg border border-border bg-card">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Shield className="w-5 h-5 text-primary" />
+                    <h4 className="font-semibold">Change Password</h4>
+                  </div>
+                  
+                  {passwordSuccess && (
+                    <Alert className="bg-green-50 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400">
+                      <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+                      <AlertDescription>{passwordSuccess}</AlertDescription>
+                    </Alert>
+                  )}
+                  {passwordError && (
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>{passwordError}</AlertDescription>
+                    </Alert>
+                  )}
+                  
+                  <form onSubmit={handleUpdatePassword} className="space-y-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="current-password">Current Password</Label>
+                      <Input
+                        id="current-password"
+                        type="password"
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        placeholder="Enter current password"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="new-password">New Password</Label>
+                      <Input
+                        id="new-password"
+                        type="password"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="Enter new password"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="confirm-password">Confirm New Password</Label>
+                      <Input
+                        id="confirm-password"
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="Confirm new password"
+                      />
+                    </div>
+                    <Button type="submit">Update Password</Button>
+                  </form>
+                </div>
+
+                {/* PIN */}
+                <div className="space-y-4 p-4 rounded-lg border border-border bg-card">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Shield className="w-5 h-5 text-amber-500" />
+                    <h4 className="font-semibold">Security PIN</h4>
+                  </div>
+                  
+                  {pinSuccess && (
+                    <Alert className="bg-green-50 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400">
+                      <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+                      <AlertDescription>{pinSuccess}</AlertDescription>
+                    </Alert>
+                  )}
+                  {pinError && (
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>{pinError}</AlertDescription>
+                    </Alert>
+                  )}
+                  
+                  <form onSubmit={handleUpdatePin} className="space-y-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="current-pin">Current PIN</Label>
+                      <Input
+                        id="current-pin"
+                        type="password"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        maxLength={6}
+                        value={currentPin}
+                        onChange={(e) => setCurrentPin(e.target.value.replace(/\D/g, ""))}
+                        placeholder="Enter current PIN"
+                        className="tracking-widest"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="new-pin">New PIN (4-6 digits)</Label>
+                      <Input
+                        id="new-pin"
+                        type="password"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        maxLength={6}
+                        value={newPin}
+                        onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ""))}
+                        placeholder="Enter new PIN"
+                        className="tracking-widest"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="confirm-pin">Confirm New PIN</Label>
+                      <Input
+                        id="confirm-pin"
+                        type="password"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        maxLength={6}
+                        value={confirmPin}
+                        onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, ""))}
+                        placeholder="Confirm new PIN"
+                        className="tracking-widest"
+                      />
+                    </div>
+                    <Button type="submit">Update PIN</Button>
+                  </form>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </div>
+            )}
+
+            {activeSection === "notifications" && (
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-xl font-semibold mb-1">Notification Preferences</h3>
+                  <p className="text-sm text-muted-foreground">Configure how you receive alerts</p>
+                </div>
+
+                <div className="space-y-4 p-4 rounded-lg border border-border bg-card">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="email-alerts">Email Alerts</Label>
+                      <p className="text-sm text-muted-foreground">Receive alerts via email</p>
+                    </div>
+                    <Switch
+                      id="email-alerts"
+                      checked={notifications.emailAlerts}
+                      onCheckedChange={() => handleNotificationChange("emailAlerts")}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="push-alerts">Push Notifications</Label>
+                      <p className="text-sm text-muted-foreground">Receive browser push notifications</p>
+                    </div>
+                    <Switch
+                      id="push-alerts"
+                      checked={notifications.pushAlerts}
+                      onCheckedChange={() => handleNotificationChange("pushAlerts")}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="critical-only">Critical Alerts Only</Label>
+                      <p className="text-sm text-muted-foreground">Only notify for critical severity alerts</p>
+                    </div>
+                    <Switch
+                      id="critical-only"
+                      checked={notifications.criticalOnly}
+                      onCheckedChange={() => handleNotificationChange("criticalOnly")}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeSection === "appearance" && (
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-xl font-semibold mb-1">Appearance</h3>
+                  <p className="text-sm text-muted-foreground">Customize your theme</p>
+                </div>
+
+                <div className="space-y-4 p-4 rounded-lg border border-border bg-card">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="dark-mode">
+                        {isDarkMode ? "Dark Mode" : "Light Mode"}
+                      </Label>
+                      <p className="text-sm text-muted-foreground">
+                        Currently using {isDarkMode ? "dark" : "light"} theme
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Sun className={["w-4 h-4", isDarkMode ? "text-muted-foreground" : "text-amber-500"].join(" ")} />
+                      <Switch
+                        id="dark-mode"
+                        checked={isDarkMode}
+                        onCheckedChange={handleThemeToggle}
+                      />
+                      <Moon className={["w-4 h-4", isDarkMode ? "text-indigo-400" : "text-muted-foreground"].join(" ")} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
+}
+
+export default function Settings() {
+  return null;
 }
