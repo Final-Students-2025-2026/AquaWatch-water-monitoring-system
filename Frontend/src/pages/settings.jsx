@@ -190,7 +190,7 @@ export function SettingsModal({ open, onOpenChange }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl h-[500px] p-0 overflow-hidden">
+      <DialogContent className="max-w-3xl h-[600px] p-0 overflow-hidden">
         <div className="flex h-full">
           {/* Sidebar */}
           <div className="w-64 bg-gradient-to-b from-primary/10 to-background border-r border-border">
@@ -242,7 +242,7 @@ export function SettingsModal({ open, onOpenChange }) {
               <div className="space-y-6">
                 <div>
                   <h3 className="text-xl font-semibold mb-1">Profile Information</h3>
-                  <p className="text-sm text-muted-foreground">Update your account username</p>
+                  <p className="text-sm text-muted-foreground">Update your account details</p>
                 </div>
                 
                 {profileSuccess && (
@@ -266,6 +266,33 @@ export function SettingsModal({ open, onOpenChange }) {
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
                       placeholder="Enter username"
+                      className="max-w-md"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="Enter email"
+                      className="max-w-md"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      placeholder="Enter phone number"
+                      className="max-w-md"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="profile-picture">Profile Picture</Label>
+                    <Input
+                      id="profile-picture"
+                      type="file"
+                      accept="image/*"
                       className="max-w-md"
                     />
                   </div>

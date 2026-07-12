@@ -74,7 +74,20 @@ async def get_latest_reading(device_id: int = Query(..., description="Device ID"
             """, device_id)
 
             if row is None:
-                return {"message": f"No readings found for device {device_id}"}
+                # Return default values instead of throwing error
+                return {
+                    "reading_id": None,
+                    "device_id": device_id,
+                    "reading_timestamp": None,
+                    "ph_value": 0.0,
+                    "turbidity_value": 0.0,
+                    "tds_value": 0.0,
+                    "temperature_celsius": 0.0,
+                    "ec_value": 0.0,
+                    "is_alert": False,
+                    "alert_reason": None,
+                    "message": f"No readings found for device {device_id}"
+                }
 
             return dict(row)
     except HTTPException:

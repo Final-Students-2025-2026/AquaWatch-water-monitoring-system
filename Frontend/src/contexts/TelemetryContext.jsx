@@ -201,11 +201,7 @@ async function fetchTelemetryData() {
     }
     const data = await response.json();
     
-    // Check if the response contains a message (no readings found)
-    if (data.message) {
-      return null; // Return null to indicate no data
-    }
-    
+    // Backend now returns default values when no readings exist
     return data;
   }
 
@@ -241,30 +237,10 @@ export function TelemetryProvider({ children }) {
   });
 
   const [history, setHistory] = useState([]);
-  const [hasData, setHasData] = useState(true);
 
   const processTelemetryData = useCallback((rawData) => {
-    if (!rawData) {
-      // No data available, set all values to null and stop polling
-      setTelemetry((prev) => ({
-        ...prev,
-        temp: null,
-        tds: null,
-        turb: null,
-        ph: null,
-        ec: null,
-        safetyStatus: 0,
-        isAlert: false,
-        severity: null,
-        alertReason: null,
-        timestamp: new Date().toISOString(),
-        isConnected: false,
-      }));
-      setHasData(false);
-      return;
-    }
-
-    setHasData(true);
+    // Backend now returns default values when no readings exist
+    // No need to check for null - always process the data
     const data = normalizeBackendData(rawData);
     const safetyStatus = calculateSafetyStatus(data, {
       isAlert: data.isAlert,
@@ -345,17 +321,15 @@ export function TelemetryProvider({ children }) {
       // Initial fetch
       updateTelemetry();
 
-      // Only poll if there's data available
-      if (hasData) {
-        interval = setInterval(updateTelemetry, POLL_INTERVAL_MS);
-      }
+      // Update every 2 seconds - backend returns default values when no readings
+      interval = setInterval(updateTelemetry, POLL_INTERVAL_MS);
     }
 
     return () => {
       if (interval) clearInterval(interval);
       if (ws) ws.close();
     };
-  }, [updateTelemetry, processTelemetryData, hasData]);
+  }, [updateTelemetry, processTelemetryData]);
 
   const value = {
     // Current telemetry values
