@@ -63,12 +63,15 @@ DATABASES = {
         default=os.environ.get('DATABASE_URL', 'postgresql://user:password@localhost:5432/aquawatch'),
         conn_max_age=600,
         conn_health_checks=True,
-        ssl_require=True,
-        options={
-            'options': '-c search_path=django_schema'
-        }
+        ssl_require=True
     )
 }
+
+# Set search path for Django schema
+if DATABASES['default']:
+    DATABASES['default']['OPTIONS'] = {
+        'options': '-c search_path=django_schema'
+    }
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
