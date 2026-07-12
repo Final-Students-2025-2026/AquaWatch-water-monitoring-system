@@ -4,7 +4,6 @@ import { Droplet, Activity, AlertTriangle, CheckCircle2, Thermometer, FlaskConic
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
-import { mockApi } from "@/lib/mockApi";
 import { useTelemetry } from "@/contexts/TelemetryContext";
 
 const STATUS_DOT = {
@@ -41,14 +40,48 @@ export default function Overview() {
     async function loadData() {
       setIsLoading(true);
       try {
-        const [summaryData, trendsData, sensorsData] = await Promise.all([
-          mockApi.getDashboardSummary(),
-          mockApi.getDashboardTrends(),
-          mockApi.listSensors(),
-        ]);
+        const token = localStorage.getItem("token");
+        
+        // Load devices (sensors)
+        const devicesResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/devices`, {
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        });
+        const devicesData = devicesResponse.ok ? await devicesResponse.json() : [];
+        
+        // Load alerts for summary
+        const alertsResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/alerts`, {
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        });
+        const alertsData = alertsResponse.ok ? await alertsResponse.json() : [];
+        
+        // Calculate summary
+        const summaryData = {
+          totalSensors: devicesData.length,
+          onlineSensors: devicesData.filter(d => d.is_active).length,
+          offlineSensors: devicesData.filter(d => !d.is_active).length,
+          criticalAlerts: alertsData.filter(a => a.status === "active" && a.severity === "critical").length,
+          warningAlerts: alertsData.filter(a => a.status === "active" && (a.severity === "medium" || a.severity === "warning")).length,
+          overallStatus: alertsData.some(a => a.status === "active" && a.severity === "critical") ? "critical" : 
+                        alertsData.some(a => a.status === "active") ? "warning" : "normal",
+        };
+        
         setSummary(summaryData);
+        setSensors(devicesData);
+        
+        // Generate trend data from telemetry history
+        const trendsData = history.map(h => ({
+          label: new Date(h.timestamp).getHours(),
+          ec: h.ec,
+          ph: h.ph,
+          tds: h.tds,
+          turbidity: h.turb,
+          temperature: h.temp,
+        }));
         setTrends(trendsData);
-        setSensors(sensorsData);
       } catch (error) {
         console.error("Failed to load dashboard data:", error);
       } finally {
@@ -56,7 +89,7 @@ export default function Overview() {
       }
     }
     loadData();
-  }, []);
+  }, [history]);
 
   if (isLoading) {
     return (

@@ -9,7 +9,6 @@ import {
   AreaChart, Area, LineChart, Line, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
-import { mockApi } from "@/lib/mockApi";
 
 
 const CHART_COLORS = {
@@ -64,14 +63,70 @@ export default function Historical() {
     async function loadData() {
       setIsLoading(true);
       try {
-        const [trendsData, readingsData] = await Promise.all([
-          mockApi.getDashboardTrends(),
-          mockApi.listReadings(),
-        ]);
-        setTrends(trendsData);
-        setReadings(readingsData);
+        const token = localStorage.getItem("token");
+        const hours = period === "today" ? 24 : period === "week" ? 168 : 720;
+        
+        // Get devices to get device_id
+        const devicesResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/devices`, {
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        });
+        const devices = devicesResponse.ok ? await devicesResponse.json() : [];
+        
+        if (devices.length === 0) {
+          setTrends([]);
+          setReadings([]);
+          setIsLoading(false);
+          return;
+        }
+        
+        // Get historical readings for the first device
+        const historyResponse = await fetch(
+          `${import.meta.env.VITE_BACKEND_URL}/readings/history?device_id=${devices[0].device_id}&hours=${hours}`,
+          {
+            headers: {
+              "Authorization": `Bearer ${token}`
+            }
+          }
+        );
+        
+        if (historyResponse.ok) {
+          const historyData = await historyResponse.json();
+          
+          // Transform backend data to match frontend expectations
+          const transformedTrends = historyData.readings.map(r => ({
+            label: new Date(r.reading_timestamp).getHours(),
+            ec: r.ec_value,
+            ph: r.ph_value,
+            tds: r.tds_value,
+            turbidity: r.turbidity_value,
+            temperature: r.temperature_celsius,
+            orp: null // Backend doesn't have ORP
+          }));
+          
+          const transformedReadings = historyData.readings.map(r => ({
+            id: r.reading_id,
+            sensorId: r.device_id,
+            recordedAt: r.reading_timestamp,
+            ph: r.ph_value,
+            tds: r.tds_value,
+            turbidity: r.turbidity_value,
+            temperature: r.temperature_celsius,
+            ec: r.ec_value,
+            orp: null
+          }));
+          
+          setTrends(transformedTrends);
+          setReadings(transformedReadings);
+        } else {
+          setTrends([]);
+          setReadings([]);
+        }
       } catch (error) {
         console.error("Failed to load historical data:", error);
+        setTrends([]);
+        setReadings([]);
       } finally {
         setIsLoading(false);
       }

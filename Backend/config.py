@@ -3,11 +3,15 @@
 # ============================================================
 
 import os
+import logging
 from datetime import timedelta
 
 from dotenv import load_dotenv
 
 load_dotenv()
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
@@ -18,6 +22,9 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours
 # Admin credentials for production
 ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin123")
+
+logger.info(f"ADMIN_USERNAME from env: {ADMIN_USERNAME}")
+logger.info(f"ADMIN_PASSWORD from env: {'SET' if ADMIN_PASSWORD != 'admin123' else 'DEFAULT'}")
 
 MAX_RETRIES = 3
 RETRY_DELAY = 1

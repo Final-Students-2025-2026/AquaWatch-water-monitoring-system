@@ -14,7 +14,6 @@ import {
   MapPin, Clock, Calendar, Plus, Trash2,
 } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
-import { mockApi } from "@/lib/mockApi";
 
 const statusConfig = {
   normal:   { label: "Normal",   color: "text-green-600",     dot: "bg-green-500",     border: "border-green-200 dark:border-green-900" },
@@ -69,12 +68,57 @@ export default function Sensors() {
   async function loadSensors() {
     setIsLoading(true);
     try {
-      const data = await mockApi.listSensors();
-      setSensors(data);
-      const readings = await mockApi.getLatestReadings();
-      setLatestReadings(readings);
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/devices`, {
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
+      if (!response.ok) throw new Error("Failed to load devices");
+      const devices = await response.json();
+      
+      // Transform backend data to match frontend expectations
+      const transformedDevices = devices.map(device => ({
+        id: device.device_id,
+        name: device.water_body_name || device.device_code,
+        location: device.location_description || "Unknown",
+        online: device.is_active,
+        status: device.is_active ? "normal" : "offline",
+        battery: 85, // Default values since backend doesn't have these
+        signal: 92,
+        lastReadingAt: device.created_at,
+        installedAt: device.created_at
+      }));
+      
+      setSensors(transformedDevices);
+      
+      // Load latest readings for each device
+      const readingsPromises = transformedDevices.map(async (device) => {
+        try {
+          const readingResponse = await fetch(
+            `${import.meta.env.VITE_BACKEND_URL}/readings/latest?device_id=${device.id}`,
+            {
+              headers: {
+                "Authorization": `Bearer ${token}`
+              }
+            }
+          );
+          if (readingResponse.ok) {
+            const reading = await readingResponse.json();
+            return { device_id: device.id, ...reading };
+          }
+          return null;
+        } catch (error) {
+          return null;
+        }
+      });
+      
+      const readings = await Promise.all(readingsPromises);
+      const validReadings = readings.filter(r => r !== null);
+      setLatestReadings(validReadings);
     } catch (error) {
       console.error("Failed to load sensors:", error);
+      setSensors([]);
     } finally {
       setIsLoading(false);
     }
@@ -82,7 +126,7 @@ export default function Sensors() {
 
   const readingsArray = Array.isArray(latestReadings) ? latestReadings : [];
   const readingsBySensor = readingsArray.reduce(
-    (acc, r) => { acc[r.sensorId] = r; return acc; }, {}
+    (acc, r) => { acc[r.device_id] = r; return acc; }, {}
   );
 
   async function handleCreate() {
@@ -94,7 +138,20 @@ export default function Sensors() {
     }
     setIsCreating(true);
     try {
-      await mockApi.createSensor({ name: trimmedName, location: trimmedLocation });
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/devices`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          device_code: `DEVICE_${Date.now()}`,
+          water_body_name: trimmedName,
+          location_description: trimmedLocation
+        })
+      });
+      if (!response.ok) throw new Error("Failed to create device");
       await loadSensors();
       setDialogOpen(false);
       setName("");
@@ -118,7 +175,14 @@ export default function Sensors() {
 
     setIsDeleting(true);
     try {
-      await mockApi.deleteSensor(pendingDeleteId);
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/devices/${pendingDeleteId}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
+      if (!response.ok) throw new Error("Failed to delete device");
       await loadSensors();
       error("Data deleted successfully");
     } catch (err) {

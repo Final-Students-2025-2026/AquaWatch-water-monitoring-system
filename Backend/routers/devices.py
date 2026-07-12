@@ -95,3 +95,22 @@ async def update_device(device_id: int, device: DeviceUpdate):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail="Database error")
+
+
+@router.delete("/{device_id}")
+async def delete_device(device_id: int):
+    try:
+        async with db_pool.acquire() as conn:
+            result = await conn.execute(
+                "DELETE FROM devices WHERE device_id = $1",
+                device_id
+            )
+
+            if result == "DELETE 0":
+                raise HTTPException(status_code=404, detail="Device not found")
+
+            return {"message": "Device deleted successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Database error")

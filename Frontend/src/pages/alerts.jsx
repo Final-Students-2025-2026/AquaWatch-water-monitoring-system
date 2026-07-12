@@ -6,7 +6,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/contexts/ToastContext";
 import { AlertTriangle, Bell, BellOff, BellRing, CheckCircle2, Clock, MapPin, Zap } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { mockApi } from "@/lib/mockApi";
 
 function severityClass(severity) {
   return severity === "critical"
@@ -31,10 +30,18 @@ export default function Alerts() {
   async function loadAlerts() {
     setIsLoading(true);
     try {
-      const data = await mockApi.listAlerts();
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/alerts`, {
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
+      if (!response.ok) throw new Error("Failed to fetch alerts");
+      const data = await response.json();
       setAlertsArray(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Failed to load alerts:", error);
+      setAlertsArray([]);
     } finally {
       setIsLoading(false);
     }
@@ -47,7 +54,16 @@ export default function Alerts() {
   async function handleUpdate(id, status) {
     setIsUpdating(true);
     try {
-      await mockApi.updateAlert(id, { status });
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/alerts/${id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ status })
+      });
+      if (!response.ok) throw new Error("Failed to update alert");
       await loadAlerts();
       if (status === "acknowledged") {
         info("Alert acknowledged");
@@ -65,6 +81,7 @@ export default function Alerts() {
   async function handleSilenceAll() {
     setIsUpdating(true);
     try {
+      const token = localStorage.getItem("token");
       if (!isSilenced) {
         // Silence: Acknowledge all active alerts
         if (activeAlerts.length === 0) {
@@ -72,7 +89,16 @@ export default function Alerts() {
           return;
         }
         await Promise.all(
-          activeAlerts.map((alert) => mockApi.updateAlert(alert.id, { status: "acknowledged" }))
+          activeAlerts.map((alert) => 
+            fetch(`${import.meta.env.VITE_BACKEND_URL}/alerts/${alert.alert_id}`, {
+              method: "PATCH",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+              },
+              body: JSON.stringify({ status: "acknowledged" })
+            })
+          )
         );
         await loadAlerts();
         setIsSilenced(true);
@@ -85,7 +111,16 @@ export default function Alerts() {
           return;
         }
         await Promise.all(
-          acknowledgedAlerts.map((alert) => mockApi.updateAlert(alert.id, { status: "active" }))
+          acknowledgedAlerts.map((alert) => 
+            fetch(`${import.meta.env.VITE_BACKEND_URL}/alerts/${alert.alert_id}`, {
+              method: "PATCH",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+              },
+              body: JSON.stringify({ status: "active" })
+            })
+          )
         );
         await loadAlerts();
         setIsSilenced(false);
@@ -166,15 +201,15 @@ export default function Alerts() {
           ) : (
             alertsArray.map((alert) => (
             <div
-              key={alert.id}
-              data-testid={`alert-item-${alert.id}`}
+              key={alert.alert_id}
+              data-testid={`alert-item-${alert.alert_id}`}
               className={`border-l-4 rounded-xl border border-border p-4 transition-all ${severityClass(alert.severity)}`}
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center flex-wrap gap-2 mb-1">
                     <span className="font-semibold text-sm">
-                      {alert.parameter} — {alert.value}
+                      {alert.alert_type} — {alert.ph_value || alert.tds_value || alert.turbidity_value || alert.temperature_celsius}
                     </span>
                     <Badge variant={severityBadge(alert.severity)} className="text-xs uppercase">
                       {alert.severity}
@@ -190,18 +225,15 @@ export default function Alerts() {
                       {alert.status.charAt(0).toUpperCase() + alert.status.slice(1)}
                     </Badge>
                   </div>
-                  <p className="text-sm text-muted-foreground mb-2 leading-relaxed">{alert.message}</p>
+                  <p className="text-sm text-muted-foreground mb-2 leading-relaxed">{alert.alert_message}</p>
                   <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1">
-                      <Zap className="w-3 h-3" /> Threshold: {alert.threshold}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <MapPin className="w-3 h-3" /> {alert.sensorName}
+                      <MapPin className="w-3 h-3" /> {alert.device_code}
                     </span>
                     <span className="flex items-center gap-1">
                       <Clock className="w-3 h-3" />
-                      {alert.triggeredAt && !isNaN(new Date(alert.triggeredAt).getTime())
-                        ? formatDistanceToNow(new Date(alert.triggeredAt), { addSuffix: true })
+                      {alert.created_at && !isNaN(new Date(alert.created_at).getTime())
+                        ? formatDistanceToNow(new Date(alert.created_at), { addSuffix: true })
                         : "Unknown time"}
                     </span>
                   </div>
@@ -211,8 +243,8 @@ export default function Alerts() {
                     <Button
                       size="sm"
                       variant="outline"
-                      data-testid={`button-acknowledge-${alert.id}`}
-                      onClick={() => handleUpdate(alert.id, "acknowledged")}
+                      data-testid={`button-acknowledge-${alert.alert_id}`}
+                      onClick={() => handleUpdate(alert.alert_id, "acknowledged")}
                       disabled={isUpdating}
                     >
                       Acknowledge
@@ -220,8 +252,8 @@ export default function Alerts() {
                     <Button
                       size="sm"
                       variant="destructive"
-                      data-testid={`button-resolve-${alert.id}`}
-                      onClick={() => handleUpdate(alert.id, "resolved")}
+                      data-testid={`button-resolve-${alert.alert_id}`}
+                      onClick={() => handleUpdate(alert.alert_id, "resolved")}
                       disabled={isUpdating}
                     >
                       Resolve
@@ -233,8 +265,8 @@ export default function Alerts() {
                     size="sm"
                     variant="outline"
                     className="shrink-0 text-green-600 border-green-500 hover:bg-green-50"
-                    data-testid={`button-resolve-ack-${alert.id}`}
-                    onClick={() => handleUpdate(alert.id, "resolved")}
+                    data-testid={`button-resolve-ack-${alert.alert_id}`}
+                    onClick={() => handleUpdate(alert.alert_id, "resolved")}
                     disabled={isUpdating}
                   >
                     Resolve

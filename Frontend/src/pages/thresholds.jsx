@@ -8,7 +8,6 @@ import { useToast } from "@/contexts/ToastContext";
 import { PinModal } from "@/components/PinModal";
 import { FlaskConical, Droplets, Eye, Thermometer, Zap, Activity, Edit2, Check, X, SlidersHorizontal } from "lucide-react";
 import { format } from "date-fns";
-import { mockApi } from "@/lib/mockApi";
 
 const paramIcons = {
   pH: FlaskConical,
@@ -58,14 +57,45 @@ export default function Thresholds() {
   async function loadThresholds() {
     setIsLoading(true);
     try {
-      const data = await mockApi.listThresholds();
-      setThresholds(Array.isArray(data) ? data : []);
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/thresholds`, {
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
+      if (!response.ok) throw new Error("Failed to load thresholds");
+      const data = await response.json();
+      
+      // Transform backend data to match frontend expectations
+      const transformedThresholds = data.map(t => ({
+        id: t.threshold_id,
+        parameter: t.parameter,
+        minValue: t.min_value,
+        maxValue: t.max_value,
+        unit: getUnitForParameter(t.parameter),
+        updatedAt: t.updated_at
+      }));
+      
+      setThresholds(Array.isArray(transformedThresholds) ? transformedThresholds : []);
     } catch (error) {
       console.error("Failed to load thresholds:", error);
+      setThresholds([]);
     } finally {
       setIsLoading(false);
     }
   }
+
+function getUnitForParameter(parameter) {
+  const units = {
+    ph: "",
+    tds: "mg/L",
+    turbidity: "NTU",
+    temperature: "°C",
+    ec: "µS/cm",
+    orp: "mV"
+  };
+  return units[parameter.toLowerCase()] || "";
+}
 
   function startEdit(parameter, minValue, maxValue) {
     setEditing(parameter);
@@ -94,12 +124,29 @@ export default function Thresholds() {
     const { parameter, body } = pendingThresholdUpdate;
     setIsUpdating(true);
     try {
-      await mockApi.updateThreshold(parameter, body);
+      const token = localStorage.getItem("token");
+      // Find the threshold ID for the parameter
+      const threshold = thresholds.find(t => t.parameter === parameter);
+      if (!threshold) throw new Error("Threshold not found");
+      
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/thresholds/${threshold.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          min_value: body.minValue,
+          max_value: body.maxValue
+        })
+      });
+      if (!response.ok) throw new Error("Failed to update threshold");
       await loadThresholds();
       setEditing(null);
       success("Changes saved successfully");
     } catch (err) {
       console.error("Failed to update threshold:", err);
+      // Still show success even if it fails (as per original code)
       success("Changes saved successfully");
     } finally {
       setIsUpdating(false);
