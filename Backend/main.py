@@ -43,7 +43,10 @@ async def lifespan(app: FastAPI):
         await conn.execute("""
             INSERT INTO users (user_id, organization_id, username, password_hash, role, is_active)
             VALUES (1, $1, $2, $3, 'administrator', TRUE)
-            ON CONFLICT (username) DO UPDATE SET password_hash = $3
+            ON CONFLICT (user_id) 
+            DO UPDATE SET 
+                username = EXCLUDED.username,
+                password_hash = EXCLUDED.password_hash;
         """, DEFAULT_ORGANIZATION_ID, ADMIN_USERNAME, default_hash)
 
         logger.info(f"Default admin user ensured (username: {ADMIN_USERNAME})")
