@@ -37,31 +37,37 @@ def register(request):
 @permission_classes([AllowAny])
 def login(request):
     """Login user and return token."""
-    username = request.data.get('username')
-    password = request.data.get('password')
-    
-    if not username or not password:
-        return Response(
-            {'detail': 'Username and password are required.'},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-    
-    user = authenticate(username=username, password=password)
-    if user:
-        if not user.is_active:
+    try:
+        username = request.data.get('username')
+        password = request.data.get('password')
+        
+        if not username or not password:
             return Response(
-                {'detail': 'This account has been disabled.'},
-                status=status.HTTP_403_FORBIDDEN
+                {'detail': 'Username and password are required.'},
+                status=status.HTTP_400_BAD_REQUEST
             )
-        token, created = Token.objects.get_or_create(user=user)
-        return Response({
-            'user': UserSerializer(user).data,
-            'token': token.key
-        })
-    return Response(
-        {'detail': 'Invalid username or password.'},
-        status=status.HTTP_401_UNAUTHORIZED
-    )
+        
+        user = authenticate(username=username, password=password)
+        if user:
+            if not user.is_active:
+                return Response(
+                    {'detail': 'This account has been disabled.'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            token, created = Token.objects.get_or_create(user=user)
+            return Response({
+                'user': UserSerializer(user).data,
+                'token': token.key
+            })
+        return Response(
+            {'detail': 'Invalid username or password.'},
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+    except Exception as e:
+        return Response(
+            {'detail': f'Server error: {str(e)}'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
 
 @api_view(['GET'])
