@@ -3,7 +3,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from django.contrib.auth import authenticate, get_user_model
-from rest_framework.authtoken.models import Token
+from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth.password_validation import validate_password
 from rest_framework.exceptions import ValidationError
 
@@ -25,10 +25,11 @@ def register(request):
     serializer = UserRegistrationSerializer(data=request.data)
     if serializer.is_valid():
         user = serializer.save()
-        token, created = Token.objects.get_or_create(user=user)
+        refresh = RefreshToken.for_user(user)
         return Response({
             'user': UserSerializer(user).data,
-            'token': token.key
+            'token': str(refresh.access_token),
+            'refresh': str(refresh)
         }, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -54,10 +55,11 @@ def login(request):
                     {'detail': 'This account has been disabled.'},
                     status=status.HTTP_403_FORBIDDEN
                 )
-            token, created = Token.objects.get_or_create(user=user)
+            refresh = RefreshToken.for_user(user)
             return Response({
                 'user': UserSerializer(user).data,
-                'token': token.key
+                'token': str(refresh.access_token),
+                'refresh': str(refresh)
             })
         return Response(
             {'detail': 'Invalid username or password.'},
