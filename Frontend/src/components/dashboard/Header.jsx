@@ -10,7 +10,7 @@ export function Header({
   const totalAlerts = criticalAlerts + warningAlerts;
 
   return (
-    <div className="flex justify-between items-start bg-gradient-to-r from-sky-50 to-cyan-50 p-8 rounded-xl border border-sky-100 animate-in fade-in slide-in-from-top-2 duration-500">
+    <div className="flex justify-between items-start bg-gradient-to-r from-sky-50 to-cyan-50 p-8 rounded-xl border border-sky-100">
       <div className="space-y-1">
         <h1 className="text-3xl font-bold text-sky-900">{title}</h1>
         <p className="text-sm text-gray-600">{subtitle}</p>
@@ -19,7 +19,7 @@ export function Header({
       <div className="flex gap-3 items-center">
         {/* Alert Badge */}
         {totalAlerts > 0 && (
-          <div className="animate-in fade-in slide-in-from-right-2 duration-500">
+          <div>
             <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-2 flex items-center gap-2 shadow-sm hover:shadow-md transition-shadow">
               <div className="relative">
                 <AlertTriangle size={16} className="text-red-600" />

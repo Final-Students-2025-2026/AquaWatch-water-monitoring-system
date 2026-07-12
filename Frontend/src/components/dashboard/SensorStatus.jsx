@@ -49,7 +49,7 @@ export function SensorStatus({ sensors } = {}) {
   const displaySensors = sensors || defaultSensors;
 
   return (
-    <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 animate-in fade-in slide-in-from-right-2 duration-500">
+    <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
       <h3 className="text-lg font-semibold text-gray-900 mb-4">
         Sensor Status
       </h3>

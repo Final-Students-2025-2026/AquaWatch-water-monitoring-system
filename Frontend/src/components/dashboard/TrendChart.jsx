@@ -30,7 +30,7 @@ export function TrendChart({
   const displayData = data || defaultData;
 
   return (
-    <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 animate-in fade-in slide-in-from-left-2 duration-500">
+    <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
       <h3 className="text-lg font-semibold text-gray-900 mb-4">{title}</h3>
 
       {/* Chart */}
@@ -78,7 +78,7 @@ export function TrendChart({
 
       {/* Warning Alert */}
       {warning && (
-        <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex gap-3 animate-in fade-in slide-in-from-bottom-2 duration-500">
+        <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex gap-3">
           <AlertCircle
             size={18}
             className="text-amber-600 flex-shrink-0 mt-0.5"

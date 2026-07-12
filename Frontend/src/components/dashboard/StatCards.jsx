@@ -31,7 +31,7 @@ export function StatCards({ stats } = {}) {
   const displayStats = stats || defaultStats;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-in fade-in slide-in-from-top-2 duration-500 stagger">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {displayStats.map((stat, idx) => (
         <div
           key={idx}
