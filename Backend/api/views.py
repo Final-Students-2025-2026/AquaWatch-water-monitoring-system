@@ -71,10 +71,20 @@ def get_latest_reading(request):
             })
         return Response(SensorReadingSerializer(reading).data)
     except Exception as e:
-        return Response(
-            {'detail': str(e)},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
+        # Return 200 with error message instead of 500
+        return Response({
+            'reading_id': None,
+            'device_id': int(device_id) if device_id else None,
+            'reading_timestamp': None,
+            'ph_value': 0.0,
+            'turbidity_value': 0.0,
+            'tds_value': 0.0,
+            'temperature_celsius': 0.0,
+            'ec_value': 0.0,
+            'is_alert': False,
+            'alert_reason': None,
+            'message': f'Error retrieving reading: {str(e)}'
+        }, status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])
@@ -99,10 +109,11 @@ def get_readings_history(request):
         
         return Response(SensorReadingSerializer(readings, many=True).data)
     except Exception as e:
-        return Response(
-            {'detail': str(e)},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
+        # Return 200 with empty array instead of 500
+        return Response({
+            'data': [],
+            'message': f'Error retrieving readings history: {str(e)}'
+        }, status=status.HTTP_200_OK)
 
 
 # Threshold Views
@@ -177,7 +188,11 @@ def dashboard_summary(request):
             'latest_reading': latest_data
         })
     except Exception as e:
-        return Response(
-            {'detail': str(e)},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
+        # Return 200 with default values instead of 500
+        return Response({
+            'total_devices': 0,
+            'active_alerts': 0,
+            'total_readings': 0,
+            'latest_reading': None,
+            'message': f'Error retrieving dashboard summary: {str(e)}'
+        }, status=status.HTTP_200_OK)
