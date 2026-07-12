@@ -103,6 +103,10 @@ export default function Sensors() {
               }
             }
           );
+          if (readingResponse.status === 404) {
+            // No readings for this device, return null
+            return null;
+          }
           if (readingResponse.ok) {
             const reading = await readingResponse.json();
             return { device_id: device.id, ...reading };
