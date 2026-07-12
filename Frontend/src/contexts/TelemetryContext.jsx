@@ -195,7 +195,7 @@ const POLL_INTERVAL_MS = 2000;
 async function fetchTelemetryData() {
   if (TELEMETRY_MODE === "HTTP") {
     // Real backend HTTP call
-    const response = await fetch(`${BACKEND_URL}/readings/latest?device_id=${DEFAULT_DEVICE_ID}`);
+    const response = await fetch(`${BACKEND_URL}/api/readings/latest/?device_id=${DEFAULT_DEVICE_ID}`);
     if (!response.ok) {
       throw new Error(`HTTP error ${response.status}`);
     }
