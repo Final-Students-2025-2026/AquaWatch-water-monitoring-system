@@ -44,7 +44,7 @@ export default function Settings() {
     criticalOnly: false,
   });
 
-  const handleUpdateProfile = (e) => {
+  const handleUpdateProfile = async (e) => {
     e.preventDefault();
     setProfileError("");
     setProfileSuccess("");
@@ -54,11 +54,32 @@ export default function Settings() {
       return;
     }
 
-    updateUser({ username: username.trim() });
-    setProfileSuccess("Profile updated successfully");
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/auth/change-username`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          new_username: username.trim()
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || "Failed to update username");
+      }
+
+      setProfileSuccess("Profile updated successfully");
+      updateUser({ username: username.trim() });
+    } catch (error) {
+      setProfileError(error.message);
+    }
   };
 
-  const handleUpdatePassword = (e) => {
+  const handleUpdatePassword = async (e) => {
     e.preventDefault();
     setPasswordError("");
     setPasswordSuccess("");
@@ -78,11 +99,32 @@ export default function Settings() {
       return;
     }
 
-    // Mock password update
-    setPasswordSuccess("Password updated successfully");
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/auth/change-password`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          current_password: currentPassword,
+          new_password: newPassword
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || "Failed to update password");
+      }
+
+      setPasswordSuccess("Password updated successfully");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (error) {
+      setPasswordError(error.message);
+    }
   };
 
   const handleUpdatePin = (e) => {
