@@ -190,7 +190,7 @@ export function SettingsModal({ open, onOpenChange }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl h-[600px] p-0 overflow-hidden">
+      <DialogContent className="max-w-3xl h-[500px] p-0 overflow-hidden">
         <div className="flex h-full">
           {/* Sidebar */}
           <div className="w-64 bg-gradient-to-b from-primary/10 to-background border-r border-border">

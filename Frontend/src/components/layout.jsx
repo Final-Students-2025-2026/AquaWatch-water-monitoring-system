@@ -128,6 +128,33 @@ export function Layout({ children }) {
             );
           })}
 
+          {/* Settings button */}
+          {collapsed ? (
+            <Tooltip delayDuration={0}>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => setSettingsModalOpen(true)}
+                  className="flex items-center justify-center p-2.5 rounded-lg transition-colors mx-auto w-10 h-10 text-sidebar-foreground/75 hover:bg-sidebar-accent/40 hover:text-sidebar-foreground"
+                >
+                  <Settings className="w-5 h-5 text-sidebar-foreground/70" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p>Settings</p>
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <button
+              onClick={() => setSettingsModalOpen(true)}
+              className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors text-sidebar-foreground/75 hover:bg-sidebar-accent/40 hover:text-sidebar-foreground"
+            >
+              <div className="flex items-center gap-3">
+                <Settings className="w-4 h-4 text-sidebar-foreground/50" />
+                <span className="text-sm">Settings</span>
+              </div>
+            </button>
+          )}
+
           {/* Logout button in nav */}
           {collapsed ? (
             <Tooltip delayDuration={0}>
@@ -157,33 +184,6 @@ export function Layout({ children }) {
               <div className="flex items-center gap-3">
                 <LogOut className="w-4 h-4 text-sidebar-foreground/50" />
                 <span className="text-sm">Logout</span>
-              </div>
-            </button>
-          )}
-
-          {/* Settings button */}
-          {collapsed ? (
-            <Tooltip delayDuration={0}>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={() => setSettingsModalOpen(true)}
-                  className="flex items-center justify-center p-2.5 rounded-lg transition-colors mx-auto w-10 h-10 text-sidebar-foreground/75 hover:bg-sidebar-accent/40 hover:text-sidebar-foreground"
-                >
-                  <Settings className="w-5 h-5 text-sidebar-foreground/70" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="right">
-                <p>Settings</p>
-              </TooltipContent>
-            </Tooltip>
-          ) : (
-            <button
-              onClick={() => setSettingsModalOpen(true)}
-              className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors text-sidebar-foreground/75 hover:bg-sidebar-accent/40 hover:text-sidebar-foreground"
-            >
-              <div className="flex items-center gap-3">
-                <Settings className="w-4 h-4 text-sidebar-foreground/50" />
-                <span className="text-sm">Settings</span>
               </div>
             </button>
           )}
@@ -289,10 +289,10 @@ export function Layout({ children }) {
 
       <TooltipProvider>
         <div className="flex flex-1 min-h-0 pt-14 md:pt-0">
-          {/* Desktop sidebar - collapsible */}
+          {/* Desktop sidebar - static */}
           <aside
             className={[
-              "hidden md:flex bg-sidebar text-sidebar-foreground flex-col border-r border-sidebar-border shrink-0 transition-all duration-300 ease-in-out min-h-0",
+              "hidden md:flex bg-sidebar text-sidebar-foreground flex-col border-r border-sidebar-border shrink-0 transition-all duration-300 ease-in-out min-h-screen sticky top-0",
               sidebarCollapsed ? "w-16" : "w-56 lg:w-64",
             ].join(" ")}
           >

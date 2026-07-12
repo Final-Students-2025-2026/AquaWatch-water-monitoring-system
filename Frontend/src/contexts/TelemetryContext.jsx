@@ -209,7 +209,7 @@ async function fetchTelemetryData() {
     return data;
   }
 
-  // For MOCK and WebSocket fallback: return mock data in backend schema format
+  // For MOCK mode: return mock data in backend schema format
   const mockData = generateMockTelemetry();
   return {
     reading_id: 0,
@@ -241,10 +241,11 @@ export function TelemetryProvider({ children }) {
   });
 
   const [history, setHistory] = useState([]);
+  const [hasData, setHasData] = useState(true);
 
   const processTelemetryData = useCallback((rawData) => {
     if (!rawData) {
-      // No data available, set all values to null
+      // No data available, set all values to null and stop polling
       setTelemetry((prev) => ({
         ...prev,
         temp: null,
@@ -259,9 +260,11 @@ export function TelemetryProvider({ children }) {
         timestamp: new Date().toISOString(),
         isConnected: false,
       }));
+      setHasData(false);
       return;
     }
 
+    setHasData(true);
     const data = normalizeBackendData(rawData);
     const safetyStatus = calculateSafetyStatus(data, {
       isAlert: data.isAlert,
@@ -342,15 +345,17 @@ export function TelemetryProvider({ children }) {
       // Initial fetch
       updateTelemetry();
 
-      // Update every 2 seconds - KEEP MOCK LOOP ACTIVE
-      interval = setInterval(updateTelemetry, POLL_INTERVAL_MS);
+      // Only poll if there's data available
+      if (hasData) {
+        interval = setInterval(updateTelemetry, POLL_INTERVAL_MS);
+      }
     }
 
     return () => {
       if (interval) clearInterval(interval);
       if (ws) ws.close();
     };
-  }, [updateTelemetry, processTelemetryData]);
+  }, [updateTelemetry, processTelemetryData, hasData]);
 
   const value = {
     // Current telemetry values
