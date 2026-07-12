@@ -35,7 +35,7 @@ export default function Login() {
       return;
     }
 
-    const result = login(username.trim(), password);
+    const result = await login(username.trim(), password);
 
     if (result.success) {
       success("Login successful");
