@@ -1,1 +1,1 @@
-web: python manage.py migrate --run-syncdb && python manage.py create_admin && gunicorn aquawatch.wsgi:application
+web: python manage.py drop_old_tables && python manage.py migrate --run-syncdb && python manage.py create_admin && gunicorn aquawatch.wsgi:application
