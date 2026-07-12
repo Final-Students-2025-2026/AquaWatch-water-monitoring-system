@@ -157,7 +157,7 @@ function getUnitForParameter(parameter) {
   const thresholdsArray = Array.isArray(thresholds) ? thresholds : [];
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="space-y-6">
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Thresholds</h2>
         <p className="text-muted-foreground text-sm mt-1">Configure safe parameter ranges for alert triggering</p>

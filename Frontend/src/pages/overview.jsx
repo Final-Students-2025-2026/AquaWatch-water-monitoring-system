@@ -112,7 +112,7 @@ export default function Overview() {
     summary?.overallStatus === "normal"   ? "text-green-600"   : "text-muted-foreground";
 
   return (
-    <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="space-y-5">
       {/* Heading */}
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-2xl md:text-3xl font-bold tracking-tight">System Overview</h2>
