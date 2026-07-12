@@ -190,17 +190,17 @@ export function SettingsModal({ open, onOpenChange }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl h-[600px] p-0 overflow-hidden">
+      <DialogContent className="max-w-2xl h-[520px] p-0 overflow-hidden rounded-xl">
         <div className="flex h-full">
           {/* Sidebar */}
-          <div className="w-64 bg-gradient-to-b from-primary/10 to-background border-r border-border">
-            <div className="p-6">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                  <Settings2 className="w-5 h-5 text-primary" />
+          <div className="w-52 bg-gradient-to-b from-primary/10 to-background border-r border-border">
+            <div className="p-4">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                  <Settings2 className="w-4 h-4 text-primary" />
                 </div>
                 <div>
-                  <DialogTitle className="text-lg font-semibold">Settings</DialogTitle>
+                  <DialogTitle className="text-base font-semibold">Settings</DialogTitle>
                   <p className="text-xs text-muted-foreground">Customize your experience</p>
                 </div>
               </div>
@@ -214,13 +214,13 @@ export function SettingsModal({ open, onOpenChange }) {
                       key={section.id}
                       onClick={() => setActiveSection(section.id)}
                       className={[
-                        "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
+                        "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all",
                         isActive
                           ? "bg-primary text-primary-foreground shadow-sm"
                           : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                       ].join(" ")}
                     >
-                      <Icon className="w-4 h-4" />
+                      <Icon className="w-3.5 h-3.5" />
                       {section.label}
                     </button>
                   );
@@ -228,21 +228,21 @@ export function SettingsModal({ open, onOpenChange }) {
               </nav>
             </div>
             
-            <div className="mt-auto p-6 border-t border-border">
-              <Button variant="outline" className="w-full" onClick={() => onOpenChange(false)}>
-                <X className="w-4 h-4 mr-2" />
+            <div className="mt-auto p-4 border-t border-border">
+              <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => onOpenChange(false)}>
+                <X className="w-3.5 h-3.5 mr-1.5" />
                 Close
               </Button>
             </div>
           </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-y-auto p-6">
+          <div className="flex-1 overflow-y-auto p-5">
             {activeSection === "profile" && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-xl font-semibold mb-1">Profile Information</h3>
-                  <p className="text-sm text-muted-foreground">Update your account details</p>
+                  <h3 className="text-lg font-semibold mb-1">Profile Information</h3>
+                  <p className="text-xs text-muted-foreground">Update your account details</p>
                 </div>
                 
                 {profileSuccess && (
@@ -258,7 +258,7 @@ export function SettingsModal({ open, onOpenChange }) {
                   </Alert>
                 )}
                 
-                <form onSubmit={handleUpdateProfile} className="space-y-4">
+                <form onSubmit={handleUpdateProfile} className="space-y-3">
                   <div className="space-y-2">
                     <Label htmlFor="username">Username</Label>
                     <Input
@@ -266,7 +266,7 @@ export function SettingsModal({ open, onOpenChange }) {
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
                       placeholder="Enter username"
-                      className="max-w-md"
+                      className="max-w-sm h-8 text-sm"
                     />
                   </div>
                   <div className="space-y-2">
@@ -275,7 +275,7 @@ export function SettingsModal({ open, onOpenChange }) {
                       id="email"
                       type="email"
                       placeholder="Enter email"
-                      className="max-w-md"
+                      className="max-w-sm h-8 text-sm"
                     />
                   </div>
                   <div className="space-y-2">
@@ -284,7 +284,7 @@ export function SettingsModal({ open, onOpenChange }) {
                       id="phone"
                       type="tel"
                       placeholder="Enter phone number"
-                      className="max-w-md"
+                      className="max-w-sm h-8 text-sm"
                     />
                   </div>
                   <div className="space-y-2">
@@ -293,10 +293,10 @@ export function SettingsModal({ open, onOpenChange }) {
                       id="profile-picture"
                       type="file"
                       accept="image/*"
-                      className="max-w-md"
+                      className="max-w-sm h-8 text-sm"
                     />
                   </div>
-                  <Button type="submit">Update Profile</Button>
+                  <Button type="submit" size="sm">Update Profile</Button>
                 </form>
               </div>
             )}
@@ -304,15 +304,15 @@ export function SettingsModal({ open, onOpenChange }) {
             {activeSection === "security" && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-xl font-semibold mb-1">Security</h3>
-                  <p className="text-sm text-muted-foreground">Manage your password and PIN</p>
+                  <h3 className="text-lg font-semibold mb-1">Security</h3>
+                  <p className="text-xs text-muted-foreground">Manage your password and PIN</p>
                 </div>
 
                 {/* Password */}
-                <div className="space-y-4 p-4 rounded-lg border border-border bg-card">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Shield className="w-5 h-5 text-primary" />
-                    <h4 className="font-semibold">Change Password</h4>
+                <div className="space-y-3 p-3 rounded-lg border border-border bg-card">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Shield className="w-4 h-4 text-primary" />
+                    <h4 className="font-semibold text-sm">Change Password</h4>
                   </div>
                   
                   {passwordSuccess && (
@@ -337,6 +337,7 @@ export function SettingsModal({ open, onOpenChange }) {
                         value={currentPassword}
                         onChange={(e) => setCurrentPassword(e.target.value)}
                         placeholder="Enter current password"
+                        className="max-w-sm h-8 text-sm"
                       />
                     </div>
                     <div className="space-y-2">
@@ -347,6 +348,7 @@ export function SettingsModal({ open, onOpenChange }) {
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
                         placeholder="Enter new password"
+                        className="max-w-sm h-8 text-sm"
                       />
                     </div>
                     <div className="space-y-2">
@@ -357,17 +359,18 @@ export function SettingsModal({ open, onOpenChange }) {
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         placeholder="Confirm new password"
+                        className="max-w-sm h-8 text-sm"
                       />
                     </div>
-                    <Button type="submit">Update Password</Button>
+                    <Button type="submit" size="sm">Update Password</Button>
                   </form>
                 </div>
 
                 {/* PIN */}
-                <div className="space-y-4 p-4 rounded-lg border border-border bg-card">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Shield className="w-5 h-5 text-amber-500" />
-                    <h4 className="font-semibold">Security PIN</h4>
+                <div className="space-y-3 p-3 rounded-lg border border-border bg-card">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Shield className="w-4 h-4 text-amber-500" />
+                    <h4 className="font-semibold text-sm">Security PIN</h4>
                   </div>
                   
                   {pinSuccess && (
@@ -395,7 +398,7 @@ export function SettingsModal({ open, onOpenChange }) {
                         value={currentPin}
                         onChange={(e) => setCurrentPin(e.target.value.replace(/\D/g, ""))}
                         placeholder="Enter current PIN"
-                        className="tracking-widest"
+                        className="tracking-widest max-w-sm h-8 text-sm"
                       />
                     </div>
                     <div className="space-y-2">
@@ -409,7 +412,7 @@ export function SettingsModal({ open, onOpenChange }) {
                         value={newPin}
                         onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ""))}
                         placeholder="Enter new PIN"
-                        className="tracking-widest"
+                        className="tracking-widest max-w-sm h-8 text-sm"
                       />
                     </div>
                     <div className="space-y-2">
@@ -423,27 +426,27 @@ export function SettingsModal({ open, onOpenChange }) {
                         value={confirmPin}
                         onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, ""))}
                         placeholder="Confirm new PIN"
-                        className="tracking-widest"
+                        className="tracking-widest max-w-sm h-8 text-sm"
                       />
                     </div>
-                    <Button type="submit">Update PIN</Button>
+                    <Button type="submit" size="sm">Update PIN</Button>
                   </form>
                 </div>
               </div>
             )}
 
             {activeSection === "notifications" && (
-              <div className="space-y-6">
+              <div className="space-y-4">
                 <div>
-                  <h3 className="text-xl font-semibold mb-1">Notification Preferences</h3>
-                  <p className="text-sm text-muted-foreground">Configure how you receive alerts</p>
+                  <h3 className="text-lg font-semibold mb-1">Notification Preferences</h3>
+                  <p className="text-xs text-muted-foreground">Configure how you receive alerts</p>
                 </div>
 
-                <div className="space-y-4 p-4 rounded-lg border border-border bg-card">
+                <div className="space-y-3 p-3 rounded-lg border border-border bg-card">
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label htmlFor="email-alerts">Email Alerts</Label>
-                      <p className="text-sm text-muted-foreground">Receive alerts via email</p>
+                      <Label htmlFor="email-alerts" className="text-sm">Email Alerts</Label>
+                      <p className="text-xs text-muted-foreground">Receive alerts via email</p>
                     </div>
                     <Switch
                       id="email-alerts"
@@ -453,8 +456,8 @@ export function SettingsModal({ open, onOpenChange }) {
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label htmlFor="push-alerts">Push Notifications</Label>
-                      <p className="text-sm text-muted-foreground">Receive browser push notifications</p>
+                      <Label htmlFor="push-alerts" className="text-sm">Push Notifications</Label>
+                      <p className="text-xs text-muted-foreground">Receive browser push notifications</p>
                     </div>
                     <Switch
                       id="push-alerts"
@@ -464,8 +467,8 @@ export function SettingsModal({ open, onOpenChange }) {
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label htmlFor="critical-only">Critical Alerts Only</Label>
-                      <p className="text-sm text-muted-foreground">Only notify for critical severity alerts</p>
+                      <Label htmlFor="critical-only" className="text-sm">Critical Alerts Only</Label>
+                      <p className="text-xs text-muted-foreground">Only notify for critical severity alerts</p>
                     </div>
                     <Switch
                       id="critical-only"
@@ -478,19 +481,19 @@ export function SettingsModal({ open, onOpenChange }) {
             )}
 
             {activeSection === "appearance" && (
-              <div className="space-y-6">
+              <div className="space-y-4">
                 <div>
-                  <h3 className="text-xl font-semibold mb-1">Appearance</h3>
-                  <p className="text-sm text-muted-foreground">Customize your theme</p>
+                  <h3 className="text-lg font-semibold mb-1">Appearance</h3>
+                  <p className="text-xs text-muted-foreground">Customize your theme</p>
                 </div>
 
-                <div className="space-y-4 p-4 rounded-lg border border-border bg-card">
+                <div className="space-y-3 p-3 rounded-lg border border-border bg-card">
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label htmlFor="dark-mode">
+                      <Label htmlFor="dark-mode" className="text-sm">
                         {isDarkMode ? "Dark Mode" : "Light Mode"}
                       </Label>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-xs text-muted-foreground">
                         Currently using {isDarkMode ? "dark" : "light"} theme
                       </p>
                     </div>
