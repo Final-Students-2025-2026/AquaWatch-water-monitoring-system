@@ -2,11 +2,6 @@ import { createContext, useContext, useState, useEffect } from "react";
 
 const AuthContext = createContext(null);
 
-// Mock user data - in production, this would come from a backend
-const MOCK_USERS = [
-  { username: "admin", password: "admin123", pin: "1234" },
-];
-
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -14,8 +9,9 @@ export function AuthProvider({ children }) {
 
   // Check for existing session on mount
   useEffect(() => {
+    const token = localStorage.getItem("token");
     const storedUser = localStorage.getItem("aquawatch_user");
-    if (storedUser) {
+    if (token && storedUser) {
       try {
         const parsedUser = JSON.parse(storedUser);
         setUser(parsedUser);
@@ -23,47 +19,56 @@ export function AuthProvider({ children }) {
       } catch (error) {
         console.error("Failed to parse stored user:", error);
         localStorage.removeItem("aquawatch_user");
+        localStorage.removeItem("token");
       }
     }
     setIsLoading(false);
   }, []);
 
-  const login = (username, password) => {
-    const foundUser = MOCK_USERS.find(
-      (u) => u.username === username && u.password === password
-    );
-    
-    if (foundUser) {
-      const userWithoutPassword = { username: foundUser.username, pin: foundUser.pin };
-      setUser(userWithoutPassword);
+  const login = async (username, password) => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/login/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        return { success: false, error: error.detail || "Login failed" };
+      }
+
+      const data = await response.json();
+      const userWithoutToken = { ...data.user };
+      setUser(userWithoutToken);
       setIsAuthenticated(true);
-      localStorage.setItem("aquawatch_user", JSON.stringify(userWithoutPassword));
+      localStorage.setItem("aquawatch_user", JSON.stringify(userWithoutToken));
+      localStorage.setItem("token", data.token);
       return { success: true };
+    } catch (error) {
+      return { success: false, error: "Network error" };
     }
-    
-    return { success: false, error: "Invalid username or password" };
   };
 
   const logout = () => {
     setUser(null);
     setIsAuthenticated(false);
     localStorage.removeItem("aquawatch_user");
+    localStorage.removeItem("token");
+  };
+
+  const updateUser = (updates) => {
+    setUser((prev) => {
+      const updated = { ...prev, ...updates };
+      localStorage.setItem("aquawatch_user", JSON.stringify(updated));
+      return updated;
+    });
   };
 
   const verifyPin = (pin) => {
     return user?.pin === pin;
-  };
-
-  const updateUser = (updates) => {
-    const updatedUser = { ...user, ...updates };
-    setUser(updatedUser);
-    localStorage.setItem("aquawatch_user", JSON.stringify(updatedUser));
-    
-    // Update in mock users array as well
-    const userIndex = MOCK_USERS.findIndex((u) => u.username === user.username);
-    if (userIndex !== -1) {
-      MOCK_USERS[userIndex] = { ...MOCK_USERS[userIndex], ...updates };
-    }
   };
 
   const value = {
