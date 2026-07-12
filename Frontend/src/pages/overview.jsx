@@ -49,6 +49,7 @@ export default function Overview() {
           }
         });
         const devicesData = devicesResponse.ok ? await devicesResponse.json() : [];
+        const safeDevicesData = Array.isArray(devicesData) ? devicesData : [];
         
         // Load alerts for summary
         const alertsResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/alerts`, {
@@ -57,20 +58,21 @@ export default function Overview() {
           }
         });
         const alertsData = alertsResponse.ok ? await alertsResponse.json() : [];
+        const safeAlertsData = Array.isArray(alertsData) ? alertsData : [];
         
         // Calculate summary
         const summaryData = {
-          totalSensors: devicesData.length,
-          onlineSensors: devicesData.filter(d => d.is_active).length,
-          offlineSensors: devicesData.filter(d => !d.is_active).length,
-          criticalAlerts: alertsData.filter(a => a.status === "active" && a.severity === "critical").length,
-          warningAlerts: alertsData.filter(a => a.status === "active" && (a.severity === "medium" || a.severity === "warning")).length,
-          overallStatus: alertsData.some(a => a.status === "active" && a.severity === "critical") ? "critical" : 
-                        alertsData.some(a => a.status === "active") ? "warning" : "normal",
+          totalSensors: safeDevicesData.length,
+          onlineSensors: safeDevicesData.filter(d => d.is_active).length,
+          offlineSensors: safeDevicesData.filter(d => !d.is_active).length,
+          criticalAlerts: safeAlertsData.filter(a => a.status === "active" && a.severity === "critical").length,
+          warningAlerts: safeAlertsData.filter(a => a.status === "active" && (a.severity === "medium" || a.severity === "warning")).length,
+          overallStatus: safeAlertsData.some(a => a.status === "active" && a.severity === "critical") ? "critical" : 
+                        safeAlertsData.some(a => a.status === "active") ? "warning" : "normal",
         };
         
         setSummary(summaryData);
-        setSensors(devicesData);
+        setSensors(safeDevicesData);
         
         // Generate trend data from telemetry history
         const trendsData = history.map(h => ({
