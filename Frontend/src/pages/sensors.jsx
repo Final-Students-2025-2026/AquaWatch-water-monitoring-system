@@ -69,7 +69,7 @@ export default function Sensors() {
     setIsLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/devices`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/devices`, {
         headers: {
           "Authorization": `Bearer ${token}`
         }
@@ -96,7 +96,7 @@ export default function Sensors() {
       const readingsPromises = transformedDevices.map(async (device) => {
         try {
           const readingResponse = await fetch(
-            `${import.meta.env.VITE_BACKEND_URL}/readings/latest?device_id=${device.id}`,
+            `${import.meta.env.VITE_BACKEND_URL}/api/readings/latest/?device_id=${device.id}`,
             {
               headers: {
                 "Authorization": `Bearer ${token}`
@@ -143,7 +143,7 @@ export default function Sensors() {
     setIsCreating(true);
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/devices`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/devices`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -180,7 +180,7 @@ export default function Sensors() {
     setIsDeleting(true);
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/devices/${pendingDeleteId}`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/devices/${pendingDeleteId}`, {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${token}`

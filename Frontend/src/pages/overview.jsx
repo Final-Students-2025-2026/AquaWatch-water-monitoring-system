@@ -43,7 +43,7 @@ export default function Overview() {
         const token = localStorage.getItem("token");
         
         // Load devices (sensors)
-        const devicesResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/devices`, {
+        const devicesResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/devices`, {
           headers: {
             "Authorization": `Bearer ${token}`
           }
@@ -51,7 +51,7 @@ export default function Overview() {
         const devicesData = devicesResponse.ok ? await devicesResponse.json() : [];
         
         // Load alerts for summary
-        const alertsResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/alerts`, {
+        const alertsResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/alerts`, {
           headers: {
             "Authorization": `Bearer ${token}`
           }

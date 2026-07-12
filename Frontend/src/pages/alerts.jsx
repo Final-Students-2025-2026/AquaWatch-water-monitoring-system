@@ -31,7 +31,7 @@ export default function Alerts() {
     setIsLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/alerts`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/alerts`, {
         headers: {
           "Authorization": `Bearer ${token}`
         }
@@ -55,7 +55,7 @@ export default function Alerts() {
     setIsUpdating(true);
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/alerts/${id}`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/alerts/${id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -90,7 +90,7 @@ export default function Alerts() {
         }
         await Promise.all(
           activeAlerts.map((alert) => 
-            fetch(`${import.meta.env.VITE_BACKEND_URL}/alerts/${alert.alert_id}`, {
+            fetch(`${import.meta.env.VITE_BACKEND_URL}/api/alerts/${alert.alert_id}`, {
               method: "PATCH",
               headers: {
                 "Content-Type": "application/json",
@@ -112,7 +112,7 @@ export default function Alerts() {
         }
         await Promise.all(
           acknowledgedAlerts.map((alert) => 
-            fetch(`${import.meta.env.VITE_BACKEND_URL}/alerts/${alert.alert_id}`, {
+            fetch(`${import.meta.env.VITE_BACKEND_URL}/api/alerts/${alert.alert_id}`, {
               method: "PATCH",
               headers: {
                 "Content-Type": "application/json",

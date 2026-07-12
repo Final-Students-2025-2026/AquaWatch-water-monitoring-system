@@ -36,7 +36,7 @@ export function Layout({ children }) {
     async function loadAlertCount() {
       try {
         const token = localStorage.getItem("token");
-        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/alerts`, {
+        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/alerts`, {
           headers: {
             "Authorization": `Bearer ${token}`
           }

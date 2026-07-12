@@ -55,7 +55,7 @@ export function SettingsModal({ open, onOpenChange }) {
 
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/auth/change-username`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/change-username`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -100,7 +100,7 @@ export function SettingsModal({ open, onOpenChange }) {
 
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/auth/change-password`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/change-password`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

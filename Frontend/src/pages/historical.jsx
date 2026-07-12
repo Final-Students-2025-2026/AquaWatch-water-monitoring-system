@@ -67,7 +67,7 @@ export default function Historical() {
         const hours = period === "today" ? 24 : period === "week" ? 168 : 720;
         
         // Get devices to get device_id
-        const devicesResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/devices`, {
+        const devicesResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/devices`, {
           headers: {
             "Authorization": `Bearer ${token}`
           }
@@ -83,7 +83,7 @@ export default function Historical() {
         
         // Get historical readings for the first device
         const historyResponse = await fetch(
-          `${import.meta.env.VITE_BACKEND_URL}/readings/history?device_id=${devices[0].device_id}&hours=${hours}`,
+          `${import.meta.env.VITE_BACKEND_URL}/api/readings/history/?device_id=${devices[0].device_id}&hours=${hours}`,
           {
             headers: {
               "Authorization": `Bearer ${token}`

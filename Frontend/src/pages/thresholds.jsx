@@ -58,7 +58,7 @@ export default function Thresholds() {
     setIsLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/thresholds`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/thresholds`, {
         headers: {
           "Authorization": `Bearer ${token}`
         }
@@ -129,7 +129,7 @@ function getUnitForParameter(parameter) {
       const threshold = thresholds.find(t => t.parameter === parameter);
       if (!threshold) throw new Error("Threshold not found");
       
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/thresholds/${threshold.id}`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/thresholds/${threshold.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
