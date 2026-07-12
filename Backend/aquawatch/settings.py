@@ -11,6 +11,10 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-change-this-in-produc
 DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
 ALLOWED_HOSTS = ['*']
 
+# Ensure SECRET_KEY is set
+if not SECRET_KEY or SECRET_KEY == 'django-insecure-change-this-in-production':
+    raise ValueError('SECRET_KEY must be set in environment variables')
+
 # Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',
