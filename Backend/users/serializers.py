@@ -8,7 +8,7 @@ User = get_user_model()
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'phone', 'first_name', 'last_name', 'pin', 'profile_picture', 'is_active', 'created_at']
+        fields = ['id', 'username', 'email', 'phone', 'company_name', 'location', 'first_name', 'last_name', 'pin', 'profile_picture', 'is_active', 'created_at']
         read_only_fields = ['id', 'created_at']
 
 
@@ -53,5 +53,13 @@ class ChangePhoneSerializer(serializers.Serializer):
     phone = serializers.CharField(required=True, max_length=20)
 
 
+class ChangeCompanyNameSerializer(serializers.Serializer):
+    company_name = serializers.CharField(required=True, max_length=200)
+
+
+class ChangeLocationSerializer(serializers.Serializer):
+    location = serializers.CharField(required=True, max_length=200)
+
+
 class ChangeProfilePictureSerializer(serializers.Serializer):
-    profile_picture = serializers.URLField(required=True, max_length=500)
+    profile_picture = serializers.CharField(required=True, max_length=5000000)

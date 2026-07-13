@@ -15,6 +15,8 @@ from .serializers import (
     ChangePinSerializer,
     ChangeEmailSerializer,
     ChangePhoneSerializer,
+    ChangeCompanyNameSerializer,
+    ChangeLocationSerializer,
     ChangeProfilePictureSerializer
 )
 
@@ -163,6 +165,30 @@ def change_phone(request):
         request.user.phone = serializer.validated_data['phone']
         request.user.save()
         return Response({'detail': 'Phone updated successfully.'})
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def change_company_name(request):
+    """Change company name."""
+    serializer = ChangeCompanyNameSerializer(data=request.data)
+    if serializer.is_valid():
+        request.user.company_name = serializer.validated_data['company_name']
+        request.user.save()
+        return Response({'detail': 'Company name updated successfully.'})
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def change_location(request):
+    """Change user location."""
+    serializer = ChangeLocationSerializer(data=request.data)
+    if serializer.is_valid():
+        request.user.location = serializer.validated_data['location']
+        request.user.save()
+        return Response({'detail': 'Location updated successfully.'})
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
