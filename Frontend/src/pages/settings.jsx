@@ -464,7 +464,7 @@ export function SettingsModal({ open, onOpenChange }) {
 
                 {/* Profile Picture Display */}
                 <div className="flex justify-center">
-                  <div className="w-15 h-15 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center overflow-hidden border-2 border-border shadow-sm">
+                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center overflow-hidden border-2 border-border shadow-sm">
                     {profilePicture ? (
                       <img src={profilePicture} alt="Profile" className="w-full h-full object-cover" />
                     ) : (
@@ -508,39 +508,40 @@ export function SettingsModal({ open, onOpenChange }) {
                       className="max-w-sm h-6 text-sm"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Phone</Label>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder="Enter phone number"
-                      className="max-w-sm h-6 text-sm"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="location">Location</Label>
-                    <Input
-                      id="location"
-                      value={location}
-                      onChange={(e) => setLocation(e.target.value)}
-                      placeholder="Enter location"
-                      className="max-w-sm h-6 text-sm"
-                    />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">Phone</Label>
+                      <Input
+                        id="phone"
+                        type="tel"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        placeholder="Enter phone number"
+                        className="max-w-sm h-6 text-sm"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="location">Location</Label>
+                      <Input
+                        id="location"
+                        value={location}
+                        onChange={(e) => setLocation(e.target.value)}
+                        placeholder="Enter location"
+                        className="max-w-sm h-6 text-sm"
+                      />
+                    </div>
                   </div>
 
                   {/* Profile Picture Upload */}
                   <div className="flex items-center gap-4 pt-2">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center overflow-hidden border-2 border-border shrink-0">
+                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center overflow-hidden border-2 border-border shrink-0">
                       {profilePicture ? (
                         <img src={profilePicture} alt="Profile" className="w-full h-full object-cover" />
                       ) : (
                         <User className="w-8 h-8 text-muted-foreground" />
                       )}
                     </div>
-                    <label className="w-10 h-10 rounded-full bg-muted hover:bg-muted/80 flex flex-col items-center justify-center cursor-pointer border-2 border-dashed border-border hover:border-primary/50 transition-colors shrink-0">
-                      <input
+                    <label className="w-14 h-14 rounded-full bg-muted hover:bg-muted/80 flex flex-col items-center justify-center cursor-pointer border-2 border-dashed border-border hover:border-primary/50 transition-colors shrink-0">                      <input
                         type="file"
                         accept="image/*"
                         className="hidden"
