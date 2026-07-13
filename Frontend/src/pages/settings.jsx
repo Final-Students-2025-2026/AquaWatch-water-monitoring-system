@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,8 +14,20 @@ export function SettingsModal({ open, onOpenChange }) {
 
   // Profile form state
   const [username, setUsername] = useState(user?.username || "");
+  const [email, setEmail] = useState(user?.email || "");
+  const [phone, setPhone] = useState(user?.phone || "");
+  const [profilePicture, setProfilePicture] = useState(user?.profile_picture || "");
   const [profileSuccess, setProfileSuccess] = useState("");
   const [profileError, setProfileError] = useState("");
+
+  // Sync form state with user data
+  useEffect(() => {
+    setUsername(user?.username || "");
+    setEmail(user?.email || "");
+    setPhone(user?.phone || "");
+    setProfilePicture(user?.profile_picture || "");
+    setLoginUsername(user?.username || "");
+  }, [user]);
 
   // Password form state
   const [currentPassword, setCurrentPassword] = useState("");
@@ -33,7 +45,12 @@ export function SettingsModal({ open, onOpenChange }) {
   const [confirmPin, setConfirmPin] = useState("");
   const [pinSuccess, setPinSuccess] = useState("");
   const [pinError, setPinError] = useState("");
-  const [securitySubTab, setSecuritySubTab] = useState("password");
+  const [securitySubTab, setSecuritySubTab] = useState("username");
+  
+  // Login username state
+  const [loginUsername, setLoginUsername] = useState(user?.username || "");
+  const [loginUsernameSuccess, setLoginUsernameSuccess] = useState("");
+  const [loginUsernameError, setLoginUsernameError] = useState("");
 
   // Theme state
   const [isDarkMode, setIsDarkMode] = useState(
@@ -53,13 +70,15 @@ export function SettingsModal({ open, onOpenChange }) {
     setProfileSuccess("");
 
     if (!username.trim()) {
-      setProfileError("Username cannot be empty");
+      setProfileError("Company name cannot be empty");
       return;
     }
 
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/change-username`, {
+      
+      // Update username (company name)
+      const usernameResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/change-username/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -70,13 +89,75 @@ export function SettingsModal({ open, onOpenChange }) {
         })
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || "Failed to update username");
+      if (!usernameResponse.ok) {
+        const error = await usernameResponse.json();
+        throw new Error(error.detail || "Failed to update company name");
+      }
+
+      // Update email if provided
+      if (email.trim()) {
+        const emailResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/change-email/`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            email: email.trim()
+          })
+        });
+
+        if (!emailResponse.ok) {
+          const error = await emailResponse.json();
+          throw new Error(error.detail || "Failed to update email");
+        }
+      }
+
+      // Update phone if provided
+      if (phone.trim()) {
+        const phoneResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/change-phone/`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            phone: phone.trim()
+          })
+        });
+
+        if (!phoneResponse.ok) {
+          const error = await phoneResponse.json();
+          throw new Error(error.detail || "Failed to update phone");
+        }
+      }
+
+      // Update profile picture if provided
+      if (profilePicture.trim()) {
+        const pictureResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/change-profile-picture/`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            profile_picture: profilePicture.trim()
+          })
+        });
+
+        if (!pictureResponse.ok) {
+          const error = await pictureResponse.json();
+          throw new Error(error.detail || "Failed to update profile picture");
+        }
       }
 
       setProfileSuccess("Profile updated successfully");
-      updateUser({ username: username.trim() });
+      updateUser({ 
+        username: username.trim(),
+        email: email.trim(),
+        phone: phone.trim(),
+        profile_picture: profilePicture.trim()
+      });
     } catch (error) {
       setProfileError(error.message);
     }
@@ -167,6 +248,41 @@ export function SettingsModal({ open, onOpenChange }) {
     setConfirmPin("");
   };
 
+  const handleUpdateLoginUsername = async (e) => {
+    e.preventDefault();
+    setLoginUsernameError("");
+    setLoginUsernameSuccess("");
+
+    if (!loginUsername.trim()) {
+      setLoginUsernameError("Login username cannot be empty");
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/change-username/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          new_username: loginUsername.trim()
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || "Failed to update login username");
+      }
+
+      setLoginUsernameSuccess("Login username updated successfully");
+      updateUser({ username: loginUsername.trim() });
+    } catch (error) {
+      setLoginUsernameError(error.message);
+    }
+  };
+
   const handleThemeToggle = () => {
     const newMode = !isDarkMode;
     setIsDarkMode(newMode);
@@ -246,7 +362,22 @@ export function SettingsModal({ open, onOpenChange }) {
               <div className="space-y-6">
                 <div>
                   <h3 className="text-lg font-semibold mb-1">Profile Information</h3>
-                  <p className="text-xs text-muted-foreground">Update your account details</p>
+                  <p className="text-xs text-muted-foreground">Update your company details</p>
+                </div>
+
+                {/* Profile Picture Display */}
+                <div className="flex items-center gap-4">
+                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center overflow-hidden border-2 border-border">
+                    {profilePicture ? (
+                      <img src={profilePicture} alt="Profile" className="w-full h-full object-cover" />
+                    ) : (
+                      <User className="w-10 h-10 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-sm">Profile Picture</h4>
+                    <p className="text-xs text-muted-foreground">Add a URL to your profile picture</p>
+                  </div>
                 </div>
                 
                 {profileSuccess && (
@@ -264,12 +395,12 @@ export function SettingsModal({ open, onOpenChange }) {
                 
                 <form onSubmit={handleUpdateProfile} className="space-y-3">
                   <div className="space-y-2">
-                    <Label htmlFor="username">Username</Label>
+                    <Label htmlFor="username">Company Name</Label>
                     <Input
                       id="username"
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
-                      placeholder="Enter username"
+                      placeholder="Enter company name"
                       className="max-w-sm h-8 text-sm"
                     />
                   </div>
@@ -278,6 +409,8 @@ export function SettingsModal({ open, onOpenChange }) {
                     <Input
                       id="email"
                       type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
                       placeholder="Enter email"
                       className="max-w-sm h-8 text-sm"
                     />
@@ -287,16 +420,20 @@ export function SettingsModal({ open, onOpenChange }) {
                     <Input
                       id="phone"
                       type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
                       placeholder="Enter phone number"
                       className="max-w-sm h-8 text-sm"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="profile-picture">Profile Picture</Label>
+                    <Label htmlFor="profile-picture">Profile Picture URL</Label>
                     <Input
                       id="profile-picture"
-                      type="file"
-                      accept="image/*"
+                      type="url"
+                      value={profilePicture}
+                      onChange={(e) => setProfilePicture(e.target.value)}
+                      placeholder="Enter profile picture URL"
                       className="max-w-sm h-8 text-sm"
                     />
                   </div>
@@ -309,11 +446,25 @@ export function SettingsModal({ open, onOpenChange }) {
               <div className="space-y-4">
                 <div>
                   <h3 className="text-lg font-semibold mb-1">Security</h3>
-                  <p className="text-xs text-muted-foreground">Manage your password and PIN</p>
+                  <p className="text-xs text-muted-foreground">Manage your login credentials</p>
                 </div>
 
                 {/* Sub-tabs */}
                 <div className="flex gap-2 border-b border-border">
+                  <button
+                    onClick={() => setSecuritySubTab("username")}
+                    className={[
+                      "px-4 py-2 text-sm font-medium transition-colors relative",
+                      securitySubTab === "username"
+                        ? "text-primary"
+                        : "text-muted-foreground hover:text-foreground"
+                    ].join(" ")}
+                  >
+                    Login Username
+                    {securitySubTab === "username" && (
+                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-full" />
+                    )}
+                  </button>
                   <button
                     onClick={() => setSecuritySubTab("password")}
                     className={[
@@ -343,6 +494,52 @@ export function SettingsModal({ open, onOpenChange }) {
                     )}
                   </button>
                 </div>
+
+                {/* Login Username Form */}
+                {securitySubTab === "username" && (
+                  <div className="space-y-3 p-4 rounded-lg border border-border bg-card">
+                    <div className="flex items-center gap-2 mb-2">
+                      <User className="w-4 h-4 text-primary" />
+                      <h4 className="font-semibold text-sm">Change Login Username</h4>
+                    </div>
+                    
+                    {loginUsernameSuccess && (
+                      <Alert className="bg-green-50 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400">
+                        <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+                        <AlertDescription>{loginUsernameSuccess}</AlertDescription>
+                      </Alert>
+                    )}
+                    {loginUsernameError && (
+                      <Alert variant="destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription>{loginUsernameError}</AlertDescription>
+                      </Alert>
+                    )}
+                    
+                    <form onSubmit={handleUpdateLoginUsername} className="space-y-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="login-username">Current Login Username</Label>
+                        <Input
+                          id="current-login-username"
+                          value={user?.username || ""}
+                          disabled
+                          className="max-w-sm h-9 text-sm bg-muted"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="new-login-username">New Login Username</Label>
+                        <Input
+                          id="new-login-username"
+                          value={loginUsername}
+                          onChange={(e) => setLoginUsername(e.target.value)}
+                          placeholder="Enter new login username"
+                          className="max-w-sm h-9 text-sm"
+                        />
+                      </div>
+                      <Button type="submit" size="sm">Update Login Username</Button>
+                    </form>
+                  </div>
+                )}
 
                 {/* Password Form */}
                 {securitySubTab === "password" && (
