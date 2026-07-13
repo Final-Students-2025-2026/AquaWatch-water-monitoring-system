@@ -65,6 +65,28 @@ export function SettingsModal({ open, onOpenChange }) {
     criticalOnly: false,
   });
 
+  const handleProfilePictureUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setProfileError("Please upload an image file");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setProfileError("Image size should be less than 2MB");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setProfilePicture(reader.result);
+      setProfileError("");
+    };
+    reader.onerror = () => {
+      setProfileError("Failed to read image file");
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
     setProfileError("");
@@ -377,19 +399,24 @@ export function SettingsModal({ open, onOpenChange }) {
                   <p className="text-xs text-muted-foreground">Update your company details</p>
                 </div>
 
-                {/* Profile Picture Display */}
+                {/* Profile Picture Upload */}
                 <div className="flex items-center gap-4">
-                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center overflow-hidden border-2 border-border">
+                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center overflow-hidden border-2 border-border shrink-0">
                     {profilePicture ? (
                       <img src={profilePicture} alt="Profile" className="w-full h-full object-cover" />
                     ) : (
                       <User className="w-10 h-10 text-muted-foreground" />
                     )}
                   </div>
-                  <div>
-                    <h4 className="font-semibold text-sm">Profile Picture</h4>
-                    <p className="text-xs text-muted-foreground">Add a URL to your profile picture</p>
-                  </div>
+                  <label className="w-24 h-24 rounded-full bg-muted hover:bg-muted/80 flex flex-col items-center justify-center cursor-pointer border-2 border-dashed border-border hover:border-primary/50 transition-colors shrink-0">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleProfilePictureUpload}
+                    />
+                    <span className="text-xs text-center text-muted-foreground px-2 leading-tight">Upload picture</span>
+                  </label>
                 </div>
                 
                 {profileSuccess && (
@@ -435,17 +462,6 @@ export function SettingsModal({ open, onOpenChange }) {
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       placeholder="Enter phone number"
-                      className="max-w-sm h-8 text-sm"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="profile-picture">Profile Picture URL</Label>
-                    <Input
-                      id="profile-picture"
-                      type="url"
-                      value={profilePicture}
-                      onChange={(e) => setProfilePicture(e.target.value)}
-                      placeholder="Enter profile picture URL"
                       className="max-w-sm h-8 text-sm"
                     />
                   </div>
