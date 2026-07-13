@@ -50,7 +50,7 @@ export default function Sensors() {
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const { error } = useToast();
+  const { success, error } = useToast();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [name, setName] = useState("");
@@ -193,7 +193,7 @@ export default function Sensors() {
       });
       if (!response.ok) throw new Error("Failed to delete device");
       await loadSensors();
-      error("Data deleted successfully");
+      success("Sensor deleted successfully");
     } catch (err) {
       console.error("Failed to delete sensor:", err);
       alert(`Failed to delete sensor: ${err?.message || "Unknown error"}`);

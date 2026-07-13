@@ -21,7 +21,7 @@ export default function Alerts() {
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isSilenced, setIsSilenced] = useState(false);
-  const { success, info } = useToast();
+  const { success, info, error } = useToast();
 
   useEffect(() => {
     loadAlerts();
@@ -72,7 +72,7 @@ export default function Alerts() {
       }
     } catch (error) {
       console.error("Failed to update alert:", error);
-      alert("Failed to update alert status");
+      error("Failed to update alert status");
     } finally {
       setIsUpdating(false);
     }
@@ -128,7 +128,7 @@ export default function Alerts() {
       }
     } catch (error) {
       console.error("Failed to update alerts:", error);
-      alert("Failed to update alerts");
+      error("Failed to update alerts");
     } finally {
       setIsUpdating(false);
     }

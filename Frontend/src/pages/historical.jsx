@@ -95,9 +95,10 @@ export default function Historical() {
         
         if (historyResponse.ok) {
           const historyData = await historyResponse.json();
+          const historyReadings = Array.isArray(historyData?.readings) ? historyData.readings : [];
           
           // Transform backend data to match frontend expectations
-          const transformedTrends = historyData.readings.map(r => ({
+          const transformedTrends = historyReadings.map(r => ({
             label: new Date(r.reading_timestamp).getHours(),
             ec: r.ec_value,
             ph: r.ph_value,
@@ -107,7 +108,7 @@ export default function Historical() {
             orp: null // Backend doesn't have ORP
           }));
           
-          const transformedReadings = historyData.readings.map(r => ({
+          const transformedReadings = historyReadings.map(r => ({
             id: r.reading_id,
             sensorId: r.device_id,
             recordedAt: r.reading_timestamp,

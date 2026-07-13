@@ -40,7 +40,7 @@ export default function Thresholds() {
   const [thresholds, setThresholds] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
-  const { success } = useToast();
+  const { success, error } = useToast();
 
   const [editing, setEditing] = useState(null);
   const [minVal, setMinVal] = useState("");
@@ -151,8 +151,7 @@ function getUnitForParameter(parameter) {
       success("Changes saved successfully");
     } catch (err) {
       console.error("Failed to update threshold:", err);
-      // Still show success even if it fails (as per original code)
-      success("Changes saved successfully");
+      error(err?.message || "Failed to update threshold");
     } finally {
       setIsUpdating(false);
       setPendingThresholdUpdate(null);
