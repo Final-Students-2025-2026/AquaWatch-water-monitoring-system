@@ -64,7 +64,12 @@ export default function Thresholds() {
         }
       });
       if (!response.ok) throw new Error("Failed to load thresholds");
-      const data = await response.json();
+      const responseData = await response.json();
+      
+      // Handle both array responses and paginated/object responses
+      const data = Array.isArray(responseData) 
+        ? responseData 
+        : (responseData?.results || responseData?.thresholds || responseData?.data || []);
       
       // Transform backend data to match frontend expectations
       const transformedThresholds = data.map(t => ({

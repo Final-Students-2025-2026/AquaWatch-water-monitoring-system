@@ -2,6 +2,22 @@ import { createContext, useContext, useState, useEffect, useRef } from "react";
 
 const AuthContext = createContext(null);
 
+// Decode JWT token and check if expired
+function isTokenExpired(token) {
+  if (!token) return true;
+  try {
+    const payload = token.split('.')[1];
+    if (!payload) return true;
+    const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const decoded = JSON.parse(atob(base64));
+    if (!decoded.exp) return false;
+    return decoded.exp * 1000 < Date.now();
+  } catch (error) {
+    console.error("Failed to decode token:", error);
+    return true;
+  }
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -77,22 +93,35 @@ export function AuthProvider({ children }) {
     };
   }, [isAuthenticated]);
 
-  // Check for existing session on mount
+  // Check for existing session on mount and validate token expiration
   useEffect(() => {
     const token = localStorage.getItem("token");
     const storedUser = localStorage.getItem("aquawatch_user");
-    if (token && storedUser) {
+    if (token && storedUser && !isTokenExpired(token)) {
       try {
         const parsedUser = JSON.parse(storedUser);
         setUser(parsedUser);
         setIsAuthenticated(true);
       } catch (error) {
         console.error("Failed to parse stored user:", error);
-        localStorage.removeItem("aquawatch_user");
-        localStorage.removeItem("token");
+        logout();
       }
+    } else if (isTokenExpired(token)) {
+      logout();
     }
     setIsLoading(false);
+  }, []);
+
+  // Periodic token expiration check (every 60 seconds)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const token = localStorage.getItem("token");
+      if (token && isTokenExpired(token)) {
+        logout();
+      }
+    }, 60000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const login = async (username, password) => {

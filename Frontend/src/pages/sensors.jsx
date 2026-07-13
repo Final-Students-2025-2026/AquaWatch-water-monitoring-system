@@ -75,7 +75,12 @@ export default function Sensors() {
         }
       });
       if (!response.ok) throw new Error("Failed to load devices");
-      const devices = await response.json();
+      const responseData = await response.json();
+      
+      // Handle both array responses and paginated responses
+      const devices = Array.isArray(responseData) 
+        ? responseData 
+        : (responseData?.results || responseData?.devices || responseData?.data || []);
       
       // Transform backend data to match frontend expectations
       const transformedDevices = devices.map(device => ({

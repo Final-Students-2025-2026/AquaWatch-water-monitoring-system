@@ -20,15 +20,6 @@ export function SettingsModal({ open, onOpenChange }) {
   const [profileSuccess, setProfileSuccess] = useState("");
   const [profileError, setProfileError] = useState("");
 
-  // Sync form state with user data
-  useEffect(() => {
-    setUsername(user?.username || "");
-    setEmail(user?.email || "");
-    setPhone(user?.phone || "");
-    setProfilePicture(user?.profile_picture || "");
-    setLoginUsername(user?.username || "");
-  }, [user]);
-
   // Password form state
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -46,12 +37,21 @@ export function SettingsModal({ open, onOpenChange }) {
   const [pinSuccess, setPinSuccess] = useState("");
   const [pinError, setPinError] = useState("");
   const [securitySubTab, setSecuritySubTab] = useState("username");
-  
+
   // Login username state
   const [loginUsername, setLoginUsername] = useState(user?.username || "");
   const [currentLoginUsername, setCurrentLoginUsername] = useState("");
   const [loginUsernameSuccess, setLoginUsernameSuccess] = useState("");
   const [loginUsernameError, setLoginUsernameError] = useState("");
+
+  // Sync form state with user data
+  useEffect(() => {
+    setUsername(user?.username || "");
+    setEmail(user?.email || "");
+    setPhone(user?.phone || "");
+    setProfilePicture(user?.profile_picture || "");
+    setLoginUsername(user?.username || "");
+  }, [user]);
 
   // Theme state
   const [isDarkMode, setIsDarkMode] = useState(
