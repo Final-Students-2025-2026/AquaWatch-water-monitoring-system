@@ -464,7 +464,7 @@ export function SettingsModal({ open, onOpenChange }) {
 
                 {/* Profile Picture Display */}
                 <div className="flex justify-center">
-                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center overflow-hidden border-2 border-border shadow-sm">
+                  <div className="w-15 h-15 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center overflow-hidden border-2 border-border shadow-sm">
                     {profilePicture ? (
                       <img src={profilePicture} alt="Profile" className="w-full h-full object-cover" />
                     ) : (
@@ -532,7 +532,7 @@ export function SettingsModal({ open, onOpenChange }) {
 
                   {/* Profile Picture Upload */}
                   <div className="flex items-center gap-4 pt-2">
-                    <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center overflow-hidden border-2 border-border shrink-0">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center overflow-hidden border-2 border-border shrink-0">
                       {profilePicture ? (
                         <img src={profilePicture} alt="Profile" className="w-full h-full object-cover" />
                       ) : (
