@@ -112,26 +112,35 @@ export function SettingsModal({ open, onOpenChange }) {
 
     try {
       const token = localStorage.getItem("token");
+      const trimmedCompanyName = companyName.trim();
+      const trimmedEmail = email.trim();
+      const trimmedPhone = phone.trim();
+      const trimmedLocation = location.trim();
+      const trimmedProfilePicture = profilePicture.trim();
+      const updatedFields = {};
 
-      // Update company name
-      const companyNameResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/change-company-name/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          company_name: companyName.trim()
-        })
-      });
+      // Update company name if changed
+      if (trimmedCompanyName !== (user?.company_name || "")) {
+        const companyNameResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/change-company-name/`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            company_name: trimmedCompanyName
+          })
+        });
 
-      if (!companyNameResponse.ok) {
-        const error = await companyNameResponse.json();
-        throw new Error(error.detail || "Failed to update company name");
+        if (!companyNameResponse.ok) {
+          const error = await companyNameResponse.json();
+          throw new Error(error.detail || "Failed to update company name");
+        }
+        updatedFields.company_name = trimmedCompanyName;
       }
 
-      // Update location if provided
-      if (location.trim()) {
+      // Update location if changed
+      if (trimmedLocation !== (user?.location || "")) {
         const locationResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/change-location/`, {
           method: "POST",
           headers: {
@@ -139,7 +148,7 @@ export function SettingsModal({ open, onOpenChange }) {
             "Authorization": `Bearer ${token}`
           },
           body: JSON.stringify({
-            location: location.trim()
+            location: trimmedLocation
           })
         });
 
@@ -147,10 +156,11 @@ export function SettingsModal({ open, onOpenChange }) {
           const error = await locationResponse.json();
           throw new Error(error.detail || "Failed to update location");
         }
+        updatedFields.location = trimmedLocation;
       }
 
-      // Update email if provided
-      if (email.trim()) {
+      // Update email if changed
+      if (trimmedEmail !== (user?.email || "")) {
         const emailResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/change-email/`, {
           method: "POST",
           headers: {
@@ -158,7 +168,7 @@ export function SettingsModal({ open, onOpenChange }) {
             "Authorization": `Bearer ${token}`
           },
           body: JSON.stringify({
-            email: email.trim()
+            email: trimmedEmail
           })
         });
 
@@ -166,10 +176,11 @@ export function SettingsModal({ open, onOpenChange }) {
           const error = await emailResponse.json();
           throw new Error(error.detail || "Failed to update email");
         }
+        updatedFields.email = trimmedEmail;
       }
 
-      // Update phone if provided
-      if (phone.trim()) {
+      // Update phone if changed
+      if (trimmedPhone !== (user?.phone || "")) {
         const phoneResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/change-phone/`, {
           method: "POST",
           headers: {
@@ -177,7 +188,7 @@ export function SettingsModal({ open, onOpenChange }) {
             "Authorization": `Bearer ${token}`
           },
           body: JSON.stringify({
-            phone: phone.trim()
+            phone: trimmedPhone
           })
         });
 
@@ -185,10 +196,11 @@ export function SettingsModal({ open, onOpenChange }) {
           const error = await phoneResponse.json();
           throw new Error(error.detail || "Failed to update phone");
         }
+        updatedFields.phone = trimmedPhone;
       }
 
-      // Update profile picture if provided
-      if (profilePicture.trim()) {
+      // Update profile picture if changed
+      if (trimmedProfilePicture !== (user?.profile_picture || "")) {
         const pictureResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/change-profile-picture/`, {
           method: "POST",
           headers: {
@@ -196,7 +208,7 @@ export function SettingsModal({ open, onOpenChange }) {
             "Authorization": `Bearer ${token}`
           },
           body: JSON.stringify({
-            profile_picture: profilePicture.trim()
+            profile_picture: trimmedProfilePicture
           })
         });
 
@@ -204,16 +216,11 @@ export function SettingsModal({ open, onOpenChange }) {
           const error = await pictureResponse.json();
           throw new Error(error.detail || "Failed to update profile picture");
         }
+        updatedFields.profile_picture = trimmedProfilePicture;
       }
 
       setProfileSuccess("Profile updated successfully");
-      updateUser({ 
-        company_name: companyName.trim(),
-        email: email.trim(),
-        phone: phone.trim(),
-        location: location.trim(),
-        profile_picture: profilePicture.trim()
-      });
+      updateUser(updatedFields);
     } catch (error) {
       setProfileError(error.message);
     }
@@ -378,6 +385,9 @@ export function SettingsModal({ open, onOpenChange }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl h-[520px] p-0 overflow-hidden rounded-xl">
+        <DialogHeader className="sr-only">
+          <DialogTitle>Settings</DialogTitle>
+        </DialogHeader>
         <div className="flex h-full">
           {/* Sidebar */}
           <div
@@ -394,7 +404,7 @@ export function SettingsModal({ open, onOpenChange }) {
                       <Settings2 className="w-4 h-4 text-primary" />
                     </div>
                     <div>
-                      <DialogTitle className="text-base font-semibold">Settings</DialogTitle>
+                      <span className="text-base font-semibold">Settings</span>
                       <p className="text-xs text-muted-foreground">Customize your experience</p>
                     </div>
                   </div>
