@@ -12,7 +12,10 @@ from .serializers import (
     UserRegistrationSerializer,
     ChangePasswordSerializer,
     ChangeUsernameSerializer,
-    ChangePinSerializer
+    ChangePinSerializer,
+    ChangeEmailSerializer,
+    ChangePhoneSerializer,
+    ChangeProfilePictureSerializer
 )
 
 User = get_user_model()
@@ -130,4 +133,46 @@ def change_pin(request):
         user.pin = serializer.validated_data['new_pin']
         user.save()
         return Response({'detail': 'PIN updated successfully.'})
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def change_email(request):
+    """Change user email."""
+    serializer = ChangeEmailSerializer(data=request.data)
+    if serializer.is_valid():
+        new_email = serializer.validated_data['email']
+        if User.objects.filter(email=new_email).exists():
+            return Response(
+                {'detail': 'Email already exists.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        request.user.email = new_email
+        request.user.save()
+        return Response({'detail': 'Email updated successfully.'})
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def change_phone(request):
+    """Change user phone."""
+    serializer = ChangePhoneSerializer(data=request.data)
+    if serializer.is_valid():
+        request.user.phone = serializer.validated_data['phone']
+        request.user.save()
+        return Response({'detail': 'Phone updated successfully.'})
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def change_profile_picture(request):
+    """Change user profile picture."""
+    serializer = ChangeProfilePictureSerializer(data=request.data)
+    if serializer.is_valid():
+        request.user.profile_picture = serializer.validated_data['profile_picture']
+        request.user.save()
+        return Response({'detail': 'Profile picture updated successfully.'})
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

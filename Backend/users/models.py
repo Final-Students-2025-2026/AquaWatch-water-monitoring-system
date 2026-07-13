@@ -7,6 +7,7 @@ class User(AbstractUser):
     phone = models.CharField(max_length=20, blank=True, null=True)
     email = models.EmailField(unique=True, blank=True, null=True)
     pin = models.CharField(max_length=6, blank=True, null=True)
+    profile_picture = models.URLField(max_length=500, blank=True, null=True)
     organization_id = models.IntegerField(blank=True, null=True)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
