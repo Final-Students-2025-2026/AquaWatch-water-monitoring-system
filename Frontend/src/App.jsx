@@ -5,6 +5,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ToastProvider } from "@/contexts/ToastContext";
 import { TelemetryProvider } from "@/contexts/TelemetryContext";
+import { useToast } from "@/contexts/ToastContext";
+import { useEffect } from "react";
 import { Layout } from "@/components/layout";
 import Overview from "@/pages/overview";
 import Historical from "@/pages/historical";
@@ -98,6 +100,19 @@ function Router() {
   );
 }
 
+function InactivityWarning() {
+  const { inactivityWarning } = useAuth();
+  const { warning } = useToast();
+
+  useEffect(() => {
+    if (inactivityWarning) {
+      warning(inactivityWarning);
+    }
+  }, [inactivityWarning, warning]);
+
+  return null;
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -105,6 +120,7 @@ function App() {
         <ToastProvider>
           <TelemetryProvider>
             <TooltipProvider>
+              <InactivityWarning />
               <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
                 <Router />
               </WouterRouter>

@@ -1,5 +1,4 @@
 import { createContext, useContext, useState, useEffect, useRef } from "react";
-import { useToast } from "@/contexts/ToastContext";
 
 const AuthContext = createContext(null);
 
@@ -7,7 +6,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const { warning } = useToast();
+  const [inactivityWarning, setInactivityWarning] = useState(null);
 
   // Inactivity timer refs
   const inactivityTimerRef = useRef(null);
@@ -24,19 +23,20 @@ export function AuthProvider({ children }) {
       clearTimeout(warningTimerRef.current);
     }
     hasWarnedRef.current = false;
+    setInactivityWarning(null);
 
     // Only set timers if user is authenticated
     if (isAuthenticated) {
       // Show warning at 9 minutes (540000 ms)
       warningTimerRef.current = setTimeout(() => {
         hasWarnedRef.current = true;
-        warning("You will be logged out in 1 minute due to inactivity. Click anywhere or press any key to stay logged in.");
+        setInactivityWarning("You will be logged out in 1 minute due to inactivity. Click anywhere or press any key to stay logged in.");
       }, 540000); // 9 minutes
 
       // Auto logout at 10 minutes (600000 ms)
       inactivityTimerRef.current = setTimeout(() => {
+        setInactivityWarning(null);
         logout();
-        warning("You have been logged out due to inactivity.");
       }, 600000); // 10 minutes
     }
   };
@@ -149,6 +149,7 @@ export function AuthProvider({ children }) {
     logout,
     verifyPin,
     updateUser,
+    inactivityWarning,
   };
 
   return (
