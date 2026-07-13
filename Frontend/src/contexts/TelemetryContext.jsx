@@ -244,7 +244,15 @@ export function TelemetryProvider({ children }) {
     const hasNoReadings = rawData?.message && rawData.message.toLowerCase().includes("no readings");
     const data = normalizeBackendData(rawData);
 
-    if (hasNoReadings) {
+    // Treat all-zero readings as no data (real hardware cannot have all zeros)
+    const isAllZero =
+      data.temp === 0 &&
+      data.tds === 0 &&
+      data.turb === 0 &&
+      data.ph === 0 &&
+      data.ec === 0;
+
+    if (hasNoReadings || isAllZero) {
       setTelemetry((prev) => ({
         ...prev,
         temp: null,
