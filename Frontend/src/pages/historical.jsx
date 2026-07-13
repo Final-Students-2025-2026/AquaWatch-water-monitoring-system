@@ -76,7 +76,6 @@ export default function Historical() {
         const devices = Array.isArray(devicesData) ? devicesData : [];
         
         if (devices.length === 0 || !devices[0]?.device_id) {
-          console.error("No devices found or device_id missing");
           setTrends([]);
           setReadings([]);
           setIsLoading(false);
