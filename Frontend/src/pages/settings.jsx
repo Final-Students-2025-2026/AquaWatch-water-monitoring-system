@@ -6,11 +6,22 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/contexts/AuthContext";
-import { User, Shield, Bell, Moon, Sun, AlertCircle, Check, X, Settings2, Eye, EyeOff } from "lucide-react";
+import { User, Shield, Bell, Moon, Sun, AlertCircle, Check, X, Settings2, Eye, EyeOff, ChevronLeft, ChevronRight, PanelLeft } from "lucide-react";
 
 export function SettingsModal({ open, onOpenChange }) {
   const { user, updateUser } = useAuth();
   const [activeSection, setActiveSection] = useState("profile");
+  const [settingsSidebarCollapsed, setSettingsSidebarCollapsed] = useState(false);
+
+  // Collapse settings sidebar by default on small screens
+  useEffect(() => {
+    const handleResize = () => {
+      setSettingsSidebarCollapsed(window.innerWidth < 640);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // Profile form state
   const [companyName, setCompanyName] = useState(user?.company_name || "");
@@ -369,16 +380,36 @@ export function SettingsModal({ open, onOpenChange }) {
       <DialogContent className="max-w-2xl h-[520px] p-0 overflow-hidden rounded-xl">
         <div className="flex h-full">
           {/* Sidebar */}
-          <div className="w-52 bg-gradient-to-b from-primary/10 to-background border-r border-border">
-            <div className="p-4">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                  <Settings2 className="w-4 h-4 text-primary" />
-                </div>
-                <div>
-                  <DialogTitle className="text-base font-semibold">Settings</DialogTitle>
-                  <p className="text-xs text-muted-foreground">Customize your experience</p>
-                </div>
+          <div
+            className={[
+              "bg-gradient-to-b from-primary/10 to-background border-r border-border flex flex-col transition-all duration-200",
+              settingsSidebarCollapsed ? "w-14" : "w-52"
+            ].join(" ")}
+          >
+            <div className="p-3">
+              <div className="flex items-center justify-between mb-4">
+                {!settingsSidebarCollapsed && (
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                      <Settings2 className="w-4 h-4 text-primary" />
+                    </div>
+                    <div>
+                      <DialogTitle className="text-base font-semibold">Settings</DialogTitle>
+                      <p className="text-xs text-muted-foreground">Customize your experience</p>
+                    </div>
+                  </div>
+                )}
+                <button
+                  onClick={() => setSettingsSidebarCollapsed(!settingsSidebarCollapsed)}
+                  className="w-7 h-7 rounded-md hover:bg-accent flex items-center justify-center text-muted-foreground"
+                  title={settingsSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                >
+                  {settingsSidebarCollapsed ? (
+                    <PanelLeft className="w-4 h-4" />
+                  ) : (
+                    <ChevronLeft className="w-4 h-4" />
+                  )}
+                </button>
               </div>
               
               <nav className="space-y-1">
@@ -389,25 +420,35 @@ export function SettingsModal({ open, onOpenChange }) {
                     <button
                       key={section.id}
                       onClick={() => setActiveSection(section.id)}
+                      title={section.label}
                       className={[
-                        "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all",
+                        "flex items-center rounded-lg text-xs font-medium transition-all",
+                        settingsSidebarCollapsed
+                          ? "w-8 h-8 justify-center mx-auto"
+                          : "w-full gap-2 px-3 py-2",
                         isActive
                           ? "bg-primary text-primary-foreground shadow-sm"
                           : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                       ].join(" ")}
                     >
                       <Icon className="w-3.5 h-3.5" />
-                      {section.label}
+                      {!settingsSidebarCollapsed && <span>{section.label}</span>}
                     </button>
                   );
                 })}
               </nav>
             </div>
             
-            <div className="mt-auto p-4 border-t border-border">
-              <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => onOpenChange(false)}>
-                <X className="w-3.5 h-3.5 mr-1.5" />
-                Close
+            <div className="mt-auto p-3 border-t border-border">
+              <Button
+                variant="outline"
+                size="sm"
+                className={settingsSidebarCollapsed ? "w-8 h-8 p-0 mx-auto" : "w-full text-xs"}
+                onClick={() => onOpenChange(false)}
+                title="Close"
+              >
+                <X className="w-3.5 h-3.5" />
+                {!settingsSidebarCollapsed && <span className="ml-1.5">Close</span>}
               </Button>
             </div>
           </div>
@@ -423,7 +464,7 @@ export function SettingsModal({ open, onOpenChange }) {
 
                 {/* Profile Picture Display */}
                 <div className="flex justify-center">
-                  <div className="w-32 h-32 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center overflow-hidden border-2 border-border shadow-sm">
+                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center overflow-hidden border-2 border-border shadow-sm">
                     {profilePicture ? (
                       <img src={profilePicture} alt="Profile" className="w-full h-full object-cover" />
                     ) : (
