@@ -31,6 +31,7 @@ export default function Overview() {
     severity,
     alertReason,
     isConnected,
+    hasData,
     history,
     getSafetyLabel,
     getSafetyColor,
@@ -182,8 +183,8 @@ export default function Overview() {
             <Thermometer className="h-4 w-4 text-cyan-500 shrink-0" />
           </CardHeader>
           <CardContent className="px-4 pb-4">
-            <div className="text-2xl font-bold text-cyan-600">{temperature?.toFixed(1) ?? "--"}°C</div>
-            <p className="text-xs text-muted-foreground mt-0.5">Live from station</p>
+            <div className="text-2xl font-bold text-cyan-600">{hasData ? `${temperature?.toFixed(1) ?? "--"}°C` : "--"}</div>
+            <p className="text-xs text-muted-foreground mt-0.5">{hasData ? "Live from station" : "No readings yet"}</p>
           </CardContent>
         </Card>
 
@@ -193,8 +194,8 @@ export default function Overview() {
             <Droplet className="h-4 w-4 text-blue-500 shrink-0" />
           </CardHeader>
           <CardContent className="px-4 pb-4">
-            <div className="text-2xl font-bold text-blue-600">{tds ?? "--"}</div>
-            <p className="text-xs text-muted-foreground mt-0.5">ppm</p>
+            <div className="text-2xl font-bold text-blue-600">{hasData ? (tds ?? "--") : "--"}</div>
+            <p className="text-xs text-muted-foreground mt-0.5">{hasData ? "ppm" : "No readings yet"}</p>
           </CardContent>
         </Card>
 
@@ -204,8 +205,8 @@ export default function Overview() {
             <Eye className="h-4 w-4 text-amber-500 shrink-0" />
           </CardHeader>
           <CardContent className="px-4 pb-4">
-            <div className="text-2xl font-bold text-amber-600">{turbidity?.toFixed(1) ?? "--"}</div>
-            <p className="text-xs text-muted-foreground mt-0.5">NTU</p>
+            <div className="text-2xl font-bold text-amber-600">{hasData ? `${turbidity?.toFixed(1) ?? "--"}` : "--"}</div>
+            <p className="text-xs text-muted-foreground mt-0.5">{hasData ? "NTU" : "No readings yet"}</p>
           </CardContent>
         </Card>
 
@@ -215,8 +216,8 @@ export default function Overview() {
             <FlaskConical className="h-4 w-4 text-violet-500 shrink-0" />
           </CardHeader>
           <CardContent className="px-4 pb-4">
-            <div className="text-2xl font-bold text-violet-600">{phValue?.toFixed(2) ?? "--"}</div>
-            <p className="text-xs text-muted-foreground mt-0.5">Acidity</p>
+            <div className="text-2xl font-bold text-violet-600">{hasData ? (phValue?.toFixed(2) ?? "--") : "--"}</div>
+            <p className="text-xs text-muted-foreground mt-0.5">{hasData ? "Acidity" : "No readings yet"}</p>
           </CardContent>
         </Card>
 
@@ -226,8 +227,8 @@ export default function Overview() {
             <Zap className="h-4 w-4 text-emerald-500 shrink-0" />
           </CardHeader>
           <CardContent className="px-4 pb-4">
-            <div className="text-2xl font-bold text-emerald-600">{ec ?? "--"}</div>
-            <p className="text-xs text-muted-foreground mt-0.5">µS/cm</p>
+            <div className="text-2xl font-bold text-emerald-600">{hasData ? (ec ?? "--") : "--"}</div>
+            <p className="text-xs text-muted-foreground mt-0.5">{hasData ? "µS/cm" : "No readings yet"}</p>
           </CardContent>
         </Card>
       </div>
@@ -238,12 +239,18 @@ export default function Overview() {
           {safetyStatus === 0 && <CheckCircle2 className="h-5 w-5 text-green-600" />}
           {safetyStatus === 1 && <AlertTriangle className="h-5 w-5 text-amber-600" />}
           {safetyStatus === 2 && <AlertTriangle className="h-5 w-5 text-red-600" />}
+          {safetyStatus === -1 && <Activity className="h-5 w-5 text-slate-600" />}
           <div>
             <p className="font-semibold">
-              Water Quality Status: {getSafetyLabel()} (Tier {safetyStatus})
+              Water Quality Status: {getSafetyLabel()}
+              {hasData && ` (Tier ${safetyStatus})`}
             </p>
             <p className="text-sm opacity-75">
-              {isConnected ? "Live data from hardware station" : "Connection lost - using cached data"}
+              {!hasData
+                ? "No sensor readings available yet"
+                : isConnected
+                  ? "Live data from hardware station"
+                  : "Connection lost - using cached data"}
               {isAlert && severity && ` • Backend severity: ${severity}`}
             </p>
             {alertReason && (

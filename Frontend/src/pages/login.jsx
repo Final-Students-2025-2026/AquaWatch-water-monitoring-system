@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Droplet, Eye, EyeOff, AlertCircle } from "lucide-react";
+import { Eye, EyeOff, AlertCircle } from "lucide-react";
 
 export default function Login() {
   const [username, setUsername] = useState("");
@@ -64,9 +64,7 @@ export default function Login() {
         {/* Content */}
         <div className="relative z-10 flex flex-col justify-center items-center h-full px-12 text-white">
           <div className="flex items-center gap-4 mb-6">
-            <div className="bg-white/10 backdrop-blur-sm p-4 rounded-2xl border border-white/20">
-              <Droplet className="w-12 h-12 text-sky-300" />
-            </div>
+            <img src="/logo.jpeg" alt="AquaWatch" className="w-16 h-16 rounded-2xl object-cover border border-white/20" />
           </div>
           <h1 className="text-5xl lg:text-6xl font-bold tracking-tight text-center mb-4">
             AquaWatch
@@ -110,9 +108,7 @@ export default function Login() {
           {/* Mobile Hero Content (visible only on small screens) */}
           <div className="lg:hidden text-center text-white mb-8">
             <div className="flex items-center justify-center gap-3 mb-4">
-              <div className="bg-white/10 backdrop-blur-sm p-3 rounded-2xl border border-white/20">
-                <Droplet className="w-10 h-10 text-sky-300" />
-              </div>
+              <img src="/logo.jpeg" alt="AquaWatch" className="w-12 h-12 rounded-2xl object-cover border border-white/20" />
             </div>
             <h1 className="text-4xl font-bold tracking-tight mb-2">
               AquaWatch
@@ -141,9 +137,7 @@ export default function Login() {
 
           {/* Desktop Logo (visible only on large screens) */}
           <div className="hidden lg:flex items-center justify-center gap-3 mb-8">
-            <div className="bg-primary text-primary-foreground p-3 rounded-xl">
-              <Droplet className="w-8 h-8" />
-            </div>
+            <img src="/logo.jpeg" alt="AquaWatch" className="w-11 h-11 rounded-xl object-cover" />
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">AquaWatch</h1>
               <p className="text-sm text-muted-foreground">IoT Monitor</p>

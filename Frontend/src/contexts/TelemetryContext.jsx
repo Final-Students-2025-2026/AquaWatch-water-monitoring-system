@@ -234,14 +234,35 @@ export function TelemetryProvider({ children }) {
     alertReason: null,
     timestamp: new Date().toISOString(),
     isConnected: true,
+    hasData: false,
   });
 
   const [history, setHistory] = useState([]);
 
   const processTelemetryData = useCallback((rawData) => {
-    // Backend now returns default values when no readings exist
-    // No need to check for null - always process the data
+    // Check if backend indicates no readings exist
+    const hasNoReadings = rawData?.message && rawData.message.toLowerCase().includes("no readings");
     const data = normalizeBackendData(rawData);
+
+    if (hasNoReadings) {
+      setTelemetry((prev) => ({
+        ...prev,
+        temp: null,
+        tds: null,
+        turb: null,
+        ph: null,
+        ec: null,
+        safetyStatus: -1,
+        isAlert: false,
+        severity: null,
+        alertReason: null,
+        timestamp: data.timestamp,
+        isConnected: true,
+        hasData: false,
+      }));
+      return;
+    }
+
     const safetyStatus = calculateSafetyStatus(data, {
       isAlert: data.isAlert,
       severity: data.severity,
@@ -260,6 +281,7 @@ export function TelemetryProvider({ children }) {
       alertReason: data.alertReason,
       timestamp: data.timestamp,
       isConnected: true,
+      hasData: true,
     }));
 
     setHistory((prev) => {
@@ -343,6 +365,7 @@ export function TelemetryProvider({ children }) {
     severity: telemetry.severity,
     alertReason: telemetry.alertReason,
     isConnected: telemetry.isConnected,
+    hasData: telemetry.hasData,
     lastUpdated: telemetry.timestamp,
 
     // History for charts
@@ -351,6 +374,8 @@ export function TelemetryProvider({ children }) {
     // Utility functions
     getSafetyLabel: () => {
       switch (telemetry.safetyStatus) {
+        case -1:
+          return "No Data";
         case 0:
           return "Safe";
         case 1:
@@ -364,6 +389,8 @@ export function TelemetryProvider({ children }) {
 
     getSafetyColor: () => {
       switch (telemetry.safetyStatus) {
+        case -1:
+          return "text-slate-600 bg-slate-50 border-slate-200";
         case 0:
           return "text-green-600 bg-green-50 border-green-200";
         case 1:

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Droplet, LayoutDashboard, LineChart, Bell, Cpu, SlidersHorizontal, Settings, LogOut, Menu, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { LayoutDashboard, LineChart, Bell, Cpu, SlidersHorizontal, Settings, LogOut, Menu, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -231,9 +231,7 @@ export function Layout({ children }) {
       {/* Mobile top bar - sticky */}
       <header className="md:hidden fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-3 bg-sidebar text-sidebar-foreground border-b border-sidebar-border">
         <Link href="/" className="flex items-center gap-2">
-          <div className="bg-primary text-primary-foreground p-1.5 rounded-md">
-            <Droplet className="w-4 h-4" />
-          </div>
+          <img src="/logo.jpeg" alt="AquaWatch" className="w-7 h-7 rounded-md object-cover" />
           <span className="font-bold text-base tracking-tight">AquaWatch</span>
           {activeAlertsCount > 0 && (
             <Badge variant="destructive" className="h-5 min-w-5 rounded-full px-1.5 text-xs">
@@ -271,9 +269,7 @@ export function Layout({ children }) {
         {/* Mobile Logo */}
         <div className="border-b border-sidebar-border p-4 shrink-0">
           <Link href="/" onClick={() => setSidebarOpen(false)} className="flex items-center gap-3">
-            <div className="bg-primary text-primary-foreground p-2 rounded-lg shrink-0">
-              <Droplet className="w-5 h-5" />
-            </div>
+            <img src="/logo.jpeg" alt="AquaWatch" className="w-10 h-10 rounded-lg object-cover shrink-0" />
             <div>
               <h1 className="font-bold text-lg tracking-tight leading-none">AquaWatch</h1>
               <p className="text-sidebar-foreground/60 text-xs uppercase tracking-wider mt-0.5">IoT Monitor</p>
@@ -299,9 +295,7 @@ export function Layout({ children }) {
             {/* Logo */}
             <div className={["border-b border-sidebar-border", sidebarCollapsed ? "p-4 flex justify-center" : "p-5"].join(" ")}>
               <Link href="/" className={["flex items-center", sidebarCollapsed ? "justify-center" : "gap-3"].join(" ")}>
-                <div className="bg-primary text-primary-foreground p-2 rounded-lg shrink-0">
-                  <Droplet className="w-5 h-5" />
-                </div>
+                <img src="/logo.jpeg" alt="AquaWatch" className="w-10 h-10 rounded-lg object-cover shrink-0" />
                 {!sidebarCollapsed && (
                   <div>
                     <h1 className="font-bold text-lg tracking-tight leading-none">AquaWatch</h1>

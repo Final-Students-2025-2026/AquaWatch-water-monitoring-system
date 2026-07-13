@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Mail, Lock, Droplets, Eye, EyeOff } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 
 export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
@@ -16,9 +16,7 @@ export function LoginForm() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="flex items-center justify-center mb-8 animate-in fade-in slide-in-from-top-4 duration-500">
-          <div className="w-12 h-12 bg-cyan-500 rounded-lg flex items-center justify-center shadow-lg">
-            <Droplets size={28} className="text-white" />
-          </div>
+          <img src="/logo.jpeg" alt="AquaWatch" className="w-12 h-12 rounded-lg object-cover shadow-lg" />
           <div className="ml-3">
             <h1 className="text-2xl font-bold text-sky-900">AquaWatch</h1>
             <p className="text-sm text-sky-600">IoT Water Quality Monitor</p>

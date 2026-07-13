@@ -4,7 +4,6 @@ import {
   Bell,
   Wifi,
   FlaskConical,
-  Droplets,
   LogOut,
 } from "lucide-react";
 
@@ -46,9 +45,7 @@ export function Sidebar({
       {/* Logo */}
       <div className="px-5 pb-6 border-b border-sky-700">
         <div className="flex items-center gap-3 mb-4 group hover:opacity-80 transition-opacity">
-          <div className="w-8 h-8 bg-cyan-500 rounded-lg flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-            <Droplets size={18} className="text-white" />
-          </div>
+          <img src="/logo.jpeg" alt="AquaWatch" className="w-8 h-8 rounded-lg object-cover shadow-lg group-hover:scale-110 transition-transform" />
           <div>
             <div className="text-sm font-bold text-white">AquaWatch</div>
             <div className="text-xs text-sky-300">IoT Monitor</div>
