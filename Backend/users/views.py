@@ -109,7 +109,7 @@ def change_username(request):
     serializer = ChangeUsernameSerializer(data=request.data)
     if serializer.is_valid():
         new_username = serializer.validated_data['new_username']
-        if User.objects.filter(username=new_username).exists():
+        if User.objects.filter(username=new_username).exclude(id=request.user.id).exists():
             return Response(
                 {'detail': 'Username already exists.'},
                 status=status.HTTP_400_BAD_REQUEST
@@ -145,7 +145,7 @@ def change_email(request):
     serializer = ChangeEmailSerializer(data=request.data)
     if serializer.is_valid():
         new_email = serializer.validated_data['email']
-        if User.objects.filter(email=new_email).exists():
+        if User.objects.filter(email=new_email).exclude(id=request.user.id).exists():
             return Response(
                 {'detail': 'Email already exists.'},
                 status=status.HTTP_400_BAD_REQUEST
