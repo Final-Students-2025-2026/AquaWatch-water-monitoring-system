@@ -49,6 +49,7 @@ export function SettingsModal({ open, onOpenChange }) {
   
   // Login username state
   const [loginUsername, setLoginUsername] = useState(user?.username || "");
+  const [currentLoginUsername, setCurrentLoginUsername] = useState("");
   const [loginUsernameSuccess, setLoginUsernameSuccess] = useState("");
   const [loginUsernameError, setLoginUsernameError] = useState("");
 
@@ -253,8 +254,18 @@ export function SettingsModal({ open, onOpenChange }) {
     setLoginUsernameError("");
     setLoginUsernameSuccess("");
 
+    if (!currentLoginUsername.trim()) {
+      setLoginUsernameError("Current login username is required");
+      return;
+    }
+
     if (!loginUsername.trim()) {
-      setLoginUsernameError("Login username cannot be empty");
+      setLoginUsernameError("New login username cannot be empty");
+      return;
+    }
+
+    if (currentLoginUsername.trim() !== user?.username) {
+      setLoginUsernameError("Current login username does not match");
       return;
     }
 
@@ -278,6 +289,7 @@ export function SettingsModal({ open, onOpenChange }) {
 
       setLoginUsernameSuccess("Login username updated successfully");
       updateUser({ username: loginUsername.trim() });
+      setCurrentLoginUsername("");
     } catch (error) {
       setLoginUsernameError(error.message);
     }
@@ -518,12 +530,13 @@ export function SettingsModal({ open, onOpenChange }) {
                     
                     <form onSubmit={handleUpdateLoginUsername} className="space-y-3">
                       <div className="space-y-2">
-                        <Label htmlFor="login-username">Current Login Username</Label>
+                        <Label htmlFor="current-login-username">Current Login Username</Label>
                         <Input
                           id="current-login-username"
-                          value={user?.username || ""}
-                          disabled
-                          className="max-w-sm h-9 text-sm bg-muted"
+                          value={currentLoginUsername}
+                          onChange={(e) => setCurrentLoginUsername(e.target.value)}
+                          placeholder="Enter current login username"
+                          className="max-w-sm h-9 text-sm"
                         />
                       </div>
                       <div className="space-y-2">

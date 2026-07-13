@@ -288,11 +288,11 @@ export function Layout({ children }) {
       </aside>
 
       <TooltipProvider>
-        <div className="flex flex-1 min-h-0 pt-14 md:pt-0">
-          {/* Desktop sidebar - static */}
+        <div className="flex flex-1 min-h-0 pt-14 md:pt-0 relative">
+          {/* Desktop sidebar - fixed */}
           <aside
             className={[
-              "hidden md:flex bg-sidebar text-sidebar-foreground flex-col border-r border-sidebar-border shrink-0 transition-all duration-300 ease-in-out min-h-screen sticky top-0",
+              "hidden md:flex bg-sidebar text-sidebar-foreground flex-col border-r border-sidebar-border shrink-0 transition-all duration-300 ease-in-out fixed top-0 left-0 h-screen z-10",
               sidebarCollapsed ? "w-16" : "w-56 lg:w-64",
             ].join(" ")}
           >
@@ -340,7 +340,10 @@ export function Layout({ children }) {
           </aside>
 
           {/* Main content - scrollable area */}
-          <main className="flex-1 overflow-y-auto relative">
+          <main className={[
+            "flex-1 overflow-y-auto relative transition-all duration-300 ease-in-out",
+            sidebarCollapsed ? "ml-16" : "ml-56 lg:ml-64"
+          ].join(" ")}>
             <div className="max-w-7xl mx-auto p-4 md:p-6 lg:p-8 space-y-6 pb-24">
               {children}
             </div>

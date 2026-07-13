@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useRef } from "react";
+import { useToast } from "@/contexts/ToastContext";
 
 const AuthContext = createContext(null);
 
@@ -6,6 +7,75 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const { warning } = useToast();
+
+  // Inactivity timer refs
+  const inactivityTimerRef = useRef(null);
+  const warningTimerRef = useRef(null);
+  const hasWarnedRef = useRef(false);
+
+  // Reset inactivity timer
+  const resetInactivityTimer = () => {
+    // Clear existing timers
+    if (inactivityTimerRef.current) {
+      clearTimeout(inactivityTimerRef.current);
+    }
+    if (warningTimerRef.current) {
+      clearTimeout(warningTimerRef.current);
+    }
+    hasWarnedRef.current = false;
+
+    // Only set timers if user is authenticated
+    if (isAuthenticated) {
+      // Show warning at 9 minutes (540000 ms)
+      warningTimerRef.current = setTimeout(() => {
+        hasWarnedRef.current = true;
+        warning("You will be logged out in 1 minute due to inactivity. Click anywhere or press any key to stay logged in.");
+      }, 540000); // 9 minutes
+
+      // Auto logout at 10 minutes (600000 ms)
+      inactivityTimerRef.current = setTimeout(() => {
+        logout();
+        warning("You have been logged out due to inactivity.");
+      }, 600000); // 10 minutes
+    }
+  };
+
+  // Handle user activity to reset timer
+  const handleUserActivity = () => {
+    if (isAuthenticated) {
+      resetInactivityTimer();
+    }
+  };
+
+  // Set up activity event listeners
+  useEffect(() => {
+    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+    
+    events.forEach(event => {
+      window.addEventListener(event, handleUserActivity);
+    });
+
+    return () => {
+      events.forEach(event => {
+        window.removeEventListener(event, handleUserActivity);
+      });
+    };
+  }, [isAuthenticated]);
+
+  // Initialize inactivity timer when authentication state changes
+  useEffect(() => {
+    resetInactivityTimer();
+    
+    return () => {
+      if (inactivityTimerRef.current) {
+        clearTimeout(inactivityTimerRef.current);
+      }
+      if (warningTimerRef.current) {
+        clearTimeout(warningTimerRef.current);
+      }
+    };
+  }, [isAuthenticated]);
 
   // Check for existing session on mount
   useEffect(() => {
