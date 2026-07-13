@@ -33,6 +33,7 @@ export function SettingsModal({ open, onOpenChange }) {
   const [confirmPin, setConfirmPin] = useState("");
   const [pinSuccess, setPinSuccess] = useState("");
   const [pinError, setPinError] = useState("");
+  const [securitySubTab, setSecuritySubTab] = useState("password");
 
   // Theme state
   const [isDarkMode, setIsDarkMode] = useState(
@@ -193,7 +194,7 @@ export function SettingsModal({ open, onOpenChange }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl h-[600px] p-0 overflow-hidden rounded-xl">
+      <DialogContent className="max-w-2xl h-[520px] p-0 overflow-hidden rounded-xl">
         <div className="flex h-full">
           {/* Sidebar */}
           <div className="w-52 bg-gradient-to-b from-primary/10 to-background border-r border-border">
@@ -305,163 +306,199 @@ export function SettingsModal({ open, onOpenChange }) {
             )}
 
             {activeSection === "security" && (
-              <div className="space-y-6">
+              <div className="space-y-4">
                 <div>
                   <h3 className="text-lg font-semibold mb-1">Security</h3>
                   <p className="text-xs text-muted-foreground">Manage your password and PIN</p>
                 </div>
 
-                {/* Password */}
-                <div className="space-y-3 p-3 rounded-lg border border-border bg-card">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Shield className="w-4 h-4 text-primary" />
-                    <h4 className="font-semibold text-sm">Change Password</h4>
-                  </div>
-                  
-                  {passwordSuccess && (
-                    <Alert className="bg-green-50 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400">
-                      <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
-                      <AlertDescription>{passwordSuccess}</AlertDescription>
-                    </Alert>
-                  )}
-                  {passwordError && (
-                    <Alert variant="destructive">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertDescription>{passwordError}</AlertDescription>
-                    </Alert>
-                  )}
-                  
-                  <form onSubmit={handleUpdatePassword} className="space-y-3">
-                    <div className="space-y-2">
-                      <Label htmlFor="current-password">Current Password</Label>
-                      <div className="relative max-w-sm">
-                        <Input
-                          id="current-password"
-                          type={showCurrentPassword ? "text" : "password"}
-                          value={currentPassword}
-                          onChange={(e) => setCurrentPassword(e.target.value)}
-                          placeholder="Enter current password"
-                          className="h-8 text-sm pr-9"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                        >
-                          {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="new-password">New Password</Label>
-                      <div className="relative max-w-sm">
-                        <Input
-                          id="new-password"
-                          type={showNewPassword ? "text" : "password"}
-                          value={newPassword}
-                          onChange={(e) => setNewPassword(e.target.value)}
-                          placeholder="Enter new password"
-                          className="h-8 text-sm pr-9"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowNewPassword(!showNewPassword)}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                        >
-                          {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="confirm-password">Confirm New Password</Label>
-                      <div className="relative max-w-sm">
-                        <Input
-                          id="confirm-password"
-                          type={showConfirmPassword ? "text" : "password"}
-                          value={confirmPassword}
-                          onChange={(e) => setConfirmPassword(e.target.value)}
-                          placeholder="Confirm new password"
-                          className="h-8 text-sm pr-9"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                        >
-                          {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
-                      </div>
-                    </div>
-                    <Button type="submit" size="sm">Update Password</Button>
-                  </form>
+                {/* Sub-tabs */}
+                <div className="flex gap-2 border-b border-border">
+                  <button
+                    onClick={() => setSecuritySubTab("password")}
+                    className={[
+                      "px-4 py-2 text-sm font-medium transition-colors relative",
+                      securitySubTab === "password"
+                        ? "text-primary"
+                        : "text-muted-foreground hover:text-foreground"
+                    ].join(" ")}
+                  >
+                    Password
+                    {securitySubTab === "password" && (
+                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-full" />
+                    )}
+                  </button>
+                  <button
+                    onClick={() => setSecuritySubTab("pin")}
+                    className={[
+                      "px-4 py-2 text-sm font-medium transition-colors relative",
+                      securitySubTab === "pin"
+                        ? "text-primary"
+                        : "text-muted-foreground hover:text-foreground"
+                    ].join(" ")}
+                  >
+                    Security PIN
+                    {securitySubTab === "pin" && (
+                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-full" />
+                    )}
+                  </button>
                 </div>
 
-                {/* PIN */}
-                <div className="space-y-3 p-3 rounded-lg border border-border bg-card">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Shield className="w-4 h-4 text-amber-500" />
-                    <h4 className="font-semibold text-sm">Security PIN</h4>
+                {/* Password Form */}
+                {securitySubTab === "password" && (
+                  <div className="space-y-3 p-4 rounded-lg border border-border bg-card">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Shield className="w-4 h-4 text-primary" />
+                      <h4 className="font-semibold text-sm">Change Password</h4>
+                    </div>
+                    
+                    {passwordSuccess && (
+                      <Alert className="bg-green-50 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400">
+                        <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+                        <AlertDescription>{passwordSuccess}</AlertDescription>
+                      </Alert>
+                    )}
+                    {passwordError && (
+                      <Alert variant="destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription>{passwordError}</AlertDescription>
+                      </Alert>
+                    )}
+                    
+                    <form onSubmit={handleUpdatePassword} className="space-y-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="current-password">Current Password</Label>
+                        <div className="relative max-w-sm">
+                          <Input
+                            id="current-password"
+                            type={showCurrentPassword ? "text" : "password"}
+                            value={currentPassword}
+                            onChange={(e) => setCurrentPassword(e.target.value)}
+                            placeholder="Enter current password"
+                            className="h-9 text-sm pr-9"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                          >
+                            {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="new-password">New Password</Label>
+                        <div className="relative max-w-sm">
+                          <Input
+                            id="new-password"
+                            type={showNewPassword ? "text" : "password"}
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            placeholder="Enter new password"
+                            className="h-9 text-sm pr-9"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowNewPassword(!showNewPassword)}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                          >
+                            {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="confirm-password">Confirm New Password</Label>
+                        <div className="relative max-w-sm">
+                          <Input
+                            id="confirm-password"
+                            type={showConfirmPassword ? "text" : "password"}
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            placeholder="Confirm new password"
+                            className="h-9 text-sm pr-9"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                          >
+                            {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </div>
+                      <Button type="submit" size="sm">Update Password</Button>
+                    </form>
                   </div>
-                  
-                  {pinSuccess && (
-                    <Alert className="bg-green-50 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400">
-                      <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
-                      <AlertDescription>{pinSuccess}</AlertDescription>
-                    </Alert>
-                  )}
-                  {pinError && (
-                    <Alert variant="destructive">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertDescription>{pinError}</AlertDescription>
-                    </Alert>
-                  )}
-                  
-                  <form onSubmit={handleUpdatePin} className="space-y-3">
-                    <div className="space-y-2">
-                      <Label htmlFor="current-pin">Current PIN</Label>
-                      <Input
-                        id="current-pin"
-                        type="password"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        maxLength={6}
-                        value={currentPin}
-                        onChange={(e) => setCurrentPin(e.target.value.replace(/\D/g, ""))}
-                        placeholder="Enter current PIN"
-                        className="tracking-widest max-w-sm h-8 text-sm"
-                      />
+                )}
+
+                {/* PIN Form */}
+                {securitySubTab === "pin" && (
+                  <div className="space-y-3 p-4 rounded-lg border border-border bg-card">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Shield className="w-4 h-4 text-amber-500" />
+                      <h4 className="font-semibold text-sm">Security PIN</h4>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="new-pin">New PIN (4-6 digits)</Label>
-                      <Input
-                        id="new-pin"
-                        type="password"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        maxLength={6}
-                        value={newPin}
-                        onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ""))}
-                        placeholder="Enter new PIN"
-                        className="tracking-widest max-w-sm h-8 text-sm"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="confirm-pin">Confirm New PIN</Label>
-                      <Input
-                        id="confirm-pin"
-                        type="password"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        maxLength={6}
-                        value={confirmPin}
-                        onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, ""))}
-                        placeholder="Confirm new PIN"
-                        className="tracking-widest max-w-sm h-8 text-sm"
-                      />
-                    </div>
-                    <Button type="submit" size="sm">Update PIN</Button>
-                  </form>
-                </div>
+                    
+                    {pinSuccess && (
+                      <Alert className="bg-green-50 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400">
+                        <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+                        <AlertDescription>{pinSuccess}</AlertDescription>
+                      </Alert>
+                    )}
+                    {pinError && (
+                      <Alert variant="destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription>{pinError}</AlertDescription>
+                      </Alert>
+                    )}
+                    
+                    <form onSubmit={handleUpdatePin} className="space-y-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="current-pin">Current PIN</Label>
+                        <Input
+                          id="current-pin"
+                          type="password"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          maxLength={6}
+                          value={currentPin}
+                          onChange={(e) => setCurrentPin(e.target.value.replace(/\D/g, ""))}
+                          placeholder="Enter current PIN"
+                          className="tracking-widest max-w-sm h-9 text-sm"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="new-pin">New PIN (4-6 digits)</Label>
+                        <Input
+                          id="new-pin"
+                          type="password"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          maxLength={6}
+                          value={newPin}
+                          onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ""))}
+                          placeholder="Enter new PIN"
+                          className="tracking-widest max-w-sm h-9 text-sm"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="confirm-pin">Confirm New PIN</Label>
+                        <Input
+                          id="confirm-pin"
+                          type="password"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          maxLength={6}
+                          value={confirmPin}
+                          onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, ""))}
+                          placeholder="Confirm new PIN"
+                          className="tracking-widest max-w-sm h-9 text-sm"
+                        />
+                      </div>
+                      <Button type="submit" size="sm">Update PIN</Button>
+                    </form>
+                  </div>
+                )}
               </div>
             )}
 
