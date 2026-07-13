@@ -468,7 +468,7 @@ export function SettingsModal({ open, onOpenChange }) {
                     {profilePicture ? (
                       <img src={profilePicture} alt="Profile" className="w-full h-full object-cover" />
                     ) : (
-                      <User className="w-14 h-14 text-muted-foreground" />
+                      <User className="w-10 h-10 text-muted-foreground" />
                     )}
                   </div>
                 </div>
@@ -486,7 +486,7 @@ export function SettingsModal({ open, onOpenChange }) {
                   </Alert>
                 )}
 
-                <form onSubmit={handleUpdateProfile} className="space-y-3">
+                <form onSubmit={handleUpdateProfile} className="space-y-2">
                   <div className="space-y-2">
                     <Label htmlFor="company-name">Company Name</Label>
                     <Input
@@ -494,7 +494,7 @@ export function SettingsModal({ open, onOpenChange }) {
                       value={companyName}
                       onChange={(e) => setCompanyName(e.target.value)}
                       placeholder="Enter company name"
-                      className="max-w-sm h-8 text-sm"
+                      className="max-w-sm h-6 text-sm"
                     />
                   </div>
                   <div className="space-y-2">
@@ -505,7 +505,7 @@ export function SettingsModal({ open, onOpenChange }) {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="Enter email"
-                      className="max-w-sm h-8 text-sm"
+                      className="max-w-sm h-6 text-sm"
                     />
                   </div>
                   <div className="space-y-2">
@@ -516,7 +516,7 @@ export function SettingsModal({ open, onOpenChange }) {
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       placeholder="Enter phone number"
-                      className="max-w-sm h-8 text-sm"
+                      className="max-w-sm h-6 text-sm"
                     />
                   </div>
                   <div className="space-y-2">
@@ -526,7 +526,7 @@ export function SettingsModal({ open, onOpenChange }) {
                       value={location}
                       onChange={(e) => setLocation(e.target.value)}
                       placeholder="Enter location"
-                      className="max-w-sm h-8 text-sm"
+                      className="max-w-sm h-6 text-sm"
                     />
                   </div>
 
@@ -536,10 +536,10 @@ export function SettingsModal({ open, onOpenChange }) {
                       {profilePicture ? (
                         <img src={profilePicture} alt="Profile" className="w-full h-full object-cover" />
                       ) : (
-                        <User className="w-10 h-10 text-muted-foreground" />
+                        <User className="w-8 h-8 text-muted-foreground" />
                       )}
                     </div>
-                    <label className="w-24 h-24 rounded-full bg-muted hover:bg-muted/80 flex flex-col items-center justify-center cursor-pointer border-2 border-dashed border-border hover:border-primary/50 transition-colors shrink-0">
+                    <label className="w-10 h-10 rounded-full bg-muted hover:bg-muted/80 flex flex-col items-center justify-center cursor-pointer border-2 border-dashed border-border hover:border-primary/50 transition-colors shrink-0">
                       <input
                         type="file"
                         accept="image/*"
