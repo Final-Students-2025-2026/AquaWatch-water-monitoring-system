@@ -342,7 +342,7 @@ export function Layout({ children }) {
           {/* Main content - scrollable area */}
           <main className={[
             "flex-1 overflow-y-auto relative transition-all duration-300 ease-in-out",
-            sidebarCollapsed ? "ml-16" : "ml-56 lg:ml-64"
+            "md:ml-16 lg:ml-56 lg:ml-64"
           ].join(" ")}>
             <div className="max-w-7xl mx-auto p-4 md:p-6 lg:p-8 space-y-6 pb-24">
               {children}

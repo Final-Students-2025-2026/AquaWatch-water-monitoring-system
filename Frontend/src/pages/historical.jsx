@@ -72,9 +72,11 @@ export default function Historical() {
             "Authorization": `Bearer ${token}`
           }
         });
-        const devices = devicesResponse.ok ? await devicesResponse.json() : [];
+        const devicesData = devicesResponse.ok ? await devicesResponse.json() : [];
+        const devices = Array.isArray(devicesData) ? devicesData : [];
         
-        if (devices.length === 0) {
+        if (devices.length === 0 || !devices[0]?.device_id) {
+          console.error("No devices found or device_id missing");
           setTrends([]);
           setReadings([]);
           setIsLoading(false);
@@ -82,8 +84,9 @@ export default function Historical() {
         }
         
         // Get historical readings for the first device
+        const deviceId = devices[0].device_id;
         const historyResponse = await fetch(
-          `${import.meta.env.VITE_BACKEND_URL}/api/readings/history/?device_id=${devices[0].device_id}&hours=${hours}`,
+          `${import.meta.env.VITE_BACKEND_URL}/api/readings/history/?device_id=${deviceId}&hours=${hours}`,
           {
             headers: {
               "Authorization": `Bearer ${token}`
