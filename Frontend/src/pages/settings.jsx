@@ -13,9 +13,10 @@ export function SettingsModal({ open, onOpenChange }) {
   const [activeSection, setActiveSection] = useState("profile");
 
   // Profile form state
-  const [username, setUsername] = useState(user?.username || "");
+  const [companyName, setCompanyName] = useState(user?.company_name || "");
   const [email, setEmail] = useState(user?.email || "");
   const [phone, setPhone] = useState(user?.phone || "");
+  const [location, setLocation] = useState(user?.location || "");
   const [profilePicture, setProfilePicture] = useState(user?.profile_picture || "");
   const [profileSuccess, setProfileSuccess] = useState("");
   const [profileError, setProfileError] = useState("");
@@ -46,9 +47,10 @@ export function SettingsModal({ open, onOpenChange }) {
 
   // Sync form state with user data
   useEffect(() => {
-    setUsername(user?.username || "");
+    setCompanyName(user?.company_name || "");
     setEmail(user?.email || "");
     setPhone(user?.phone || "");
+    setLocation(user?.location || "");
     setProfilePicture(user?.profile_picture || "");
     setLoginUsername(user?.username || "");
   }, [user]);
@@ -92,29 +94,48 @@ export function SettingsModal({ open, onOpenChange }) {
     setProfileError("");
     setProfileSuccess("");
 
-    if (!username.trim()) {
+    if (!companyName.trim()) {
       setProfileError("Company name cannot be empty");
       return;
     }
 
     try {
       const token = localStorage.getItem("token");
-      
-      // Update username (company name)
-      const usernameResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/change-username/`, {
+
+      // Update company name
+      const companyNameResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/change-company-name/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`
         },
         body: JSON.stringify({
-          new_username: username.trim()
+          company_name: companyName.trim()
         })
       });
 
-      if (!usernameResponse.ok) {
-        const error = await usernameResponse.json();
+      if (!companyNameResponse.ok) {
+        const error = await companyNameResponse.json();
         throw new Error(error.detail || "Failed to update company name");
+      }
+
+      // Update location if provided
+      if (location.trim()) {
+        const locationResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/change-location/`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            location: location.trim()
+          })
+        });
+
+        if (!locationResponse.ok) {
+          const error = await locationResponse.json();
+          throw new Error(error.detail || "Failed to update location");
+        }
       }
 
       // Update email if provided
@@ -176,9 +197,10 @@ export function SettingsModal({ open, onOpenChange }) {
 
       setProfileSuccess("Profile updated successfully");
       updateUser({ 
-        username: username.trim(),
+        company_name: companyName.trim(),
         email: email.trim(),
         phone: phone.trim(),
+        location: location.trim(),
         profile_picture: profilePicture.trim()
       });
     } catch (error) {
@@ -399,26 +421,17 @@ export function SettingsModal({ open, onOpenChange }) {
                   <p className="text-xs text-muted-foreground">Update your company details</p>
                 </div>
 
-                {/* Profile Picture Upload */}
-                <div className="flex items-center gap-4">
-                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center overflow-hidden border-2 border-border shrink-0">
+                {/* Profile Picture Display */}
+                <div className="flex justify-center">
+                  <div className="w-32 h-32 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center overflow-hidden border-2 border-border shadow-sm">
                     {profilePicture ? (
                       <img src={profilePicture} alt="Profile" className="w-full h-full object-cover" />
                     ) : (
-                      <User className="w-10 h-10 text-muted-foreground" />
+                      <User className="w-14 h-14 text-muted-foreground" />
                     )}
                   </div>
-                  <label className="w-24 h-24 rounded-full bg-muted hover:bg-muted/80 flex flex-col items-center justify-center cursor-pointer border-2 border-dashed border-border hover:border-primary/50 transition-colors shrink-0">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleProfilePictureUpload}
-                    />
-                    <span className="text-xs text-center text-muted-foreground px-2 leading-tight">Upload picture</span>
-                  </label>
                 </div>
-                
+
                 {profileSuccess && (
                   <Alert className="bg-green-50 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400">
                     <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
@@ -431,14 +444,14 @@ export function SettingsModal({ open, onOpenChange }) {
                     <AlertDescription>{profileError}</AlertDescription>
                   </Alert>
                 )}
-                
+
                 <form onSubmit={handleUpdateProfile} className="space-y-3">
                   <div className="space-y-2">
-                    <Label htmlFor="username">Company Name</Label>
+                    <Label htmlFor="company-name">Company Name</Label>
                     <Input
-                      id="username"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
+                      id="company-name"
+                      value={companyName}
+                      onChange={(e) => setCompanyName(e.target.value)}
                       placeholder="Enter company name"
                       className="max-w-sm h-8 text-sm"
                     />
@@ -465,6 +478,37 @@ export function SettingsModal({ open, onOpenChange }) {
                       className="max-w-sm h-8 text-sm"
                     />
                   </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="location">Location</Label>
+                    <Input
+                      id="location"
+                      value={location}
+                      onChange={(e) => setLocation(e.target.value)}
+                      placeholder="Enter location"
+                      className="max-w-sm h-8 text-sm"
+                    />
+                  </div>
+
+                  {/* Profile Picture Upload */}
+                  <div className="flex items-center gap-4 pt-2">
+                    <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center overflow-hidden border-2 border-border shrink-0">
+                      {profilePicture ? (
+                        <img src={profilePicture} alt="Profile" className="w-full h-full object-cover" />
+                      ) : (
+                        <User className="w-10 h-10 text-muted-foreground" />
+                      )}
+                    </div>
+                    <label className="w-24 h-24 rounded-full bg-muted hover:bg-muted/80 flex flex-col items-center justify-center cursor-pointer border-2 border-dashed border-border hover:border-primary/50 transition-colors shrink-0">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleProfilePictureUpload}
+                      />
+                      <span className="text-xs text-center text-muted-foreground px-2 leading-tight">Upload picture</span>
+                    </label>
+                  </div>
+
                   <Button type="submit" size="sm">Update Profile</Button>
                 </form>
               </div>
