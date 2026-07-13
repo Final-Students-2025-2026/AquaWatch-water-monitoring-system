@@ -66,6 +66,19 @@ export function SettingsModal({ open, onOpenChange }) {
     setLoginUsername(user?.username || "");
   }, [user]);
 
+  // Auto-clear profile messages after 5 seconds
+  useEffect(() => {
+    if (!profileSuccess) return;
+    const timer = setTimeout(() => setProfileSuccess(""), 5000);
+    return () => clearTimeout(timer);
+  }, [profileSuccess]);
+
+  useEffect(() => {
+    if (!profileError) return;
+    const timer = setTimeout(() => setProfileError(""), 5000);
+    return () => clearTimeout(timer);
+  }, [profileError]);
+
   // Theme state
   const [isDarkMode, setIsDarkMode] = useState(
     document.documentElement.classList.contains("dark")
