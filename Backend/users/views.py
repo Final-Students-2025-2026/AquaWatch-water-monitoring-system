@@ -196,9 +196,12 @@ def change_location(request):
 @permission_classes([IsAuthenticated])
 def change_profile_picture(request):
     """Change user profile picture."""
-    serializer = ChangeProfilePictureSerializer(data=request.data)
-    if serializer.is_valid():
-        request.user.profile_picture = serializer.validated_data['profile_picture']
-        request.user.save()
-        return Response({'detail': 'Profile picture updated successfully.'})
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        serializer = ChangeProfilePictureSerializer(data=request.data)
+        if serializer.is_valid():
+            request.user.profile_picture = serializer.validated_data['profile_picture']
+            request.user.save()
+            return Response({'detail': 'Profile picture updated successfully.'})
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({'detail': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
