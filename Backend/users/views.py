@@ -86,9 +86,9 @@ def change_password(request):
     serializer = ChangePasswordSerializer(data=request.data)
     if serializer.is_valid():
         user = request.user
-        if not user.check_password(serializer.validated_data['old_password']):
+        if not user.check_password(serializer.validated_data['current_password']):
             return Response(
-                {'detail': 'Old password is incorrect.'},
+                {'detail': 'Current password is incorrect.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         user.set_password(serializer.validated_data['new_password'])

@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/contexts/AuthContext";
-import { User, Shield, Bell, Moon, Sun, AlertCircle, Check, X, Settings2 } from "lucide-react";
+import { User, Shield, Bell, Moon, Sun, AlertCircle, Check, X, Settings2, Eye, EyeOff } from "lucide-react";
 
 export function SettingsModal({ open, onOpenChange }) {
   const { user, updateUser } = useAuth();
@@ -23,6 +23,9 @@ export function SettingsModal({ open, onOpenChange }) {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordSuccess, setPasswordSuccess] = useState("");
   const [passwordError, setPasswordError] = useState("");
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // PIN form state
   const [currentPin, setCurrentPin] = useState("");
@@ -100,7 +103,7 @@ export function SettingsModal({ open, onOpenChange }) {
 
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/change-password`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/change-password/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -190,7 +193,7 @@ export function SettingsModal({ open, onOpenChange }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl h-[520px] p-0 overflow-hidden rounded-xl">
+      <DialogContent className="max-w-2xl h-[600px] p-0 overflow-hidden rounded-xl">
         <div className="flex h-full">
           {/* Sidebar */}
           <div className="w-52 bg-gradient-to-b from-primary/10 to-background border-r border-border">
@@ -331,36 +334,63 @@ export function SettingsModal({ open, onOpenChange }) {
                   <form onSubmit={handleUpdatePassword} className="space-y-3">
                     <div className="space-y-2">
                       <Label htmlFor="current-password">Current Password</Label>
-                      <Input
-                        id="current-password"
-                        type="password"
-                        value={currentPassword}
-                        onChange={(e) => setCurrentPassword(e.target.value)}
-                        placeholder="Enter current password"
-                        className="max-w-sm h-8 text-sm"
-                      />
+                      <div className="relative max-w-sm">
+                        <Input
+                          id="current-password"
+                          type={showCurrentPassword ? "text" : "password"}
+                          value={currentPassword}
+                          onChange={(e) => setCurrentPassword(e.target.value)}
+                          placeholder="Enter current password"
+                          className="h-8 text-sm pr-9"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                          {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="new-password">New Password</Label>
-                      <Input
-                        id="new-password"
-                        type="password"
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        placeholder="Enter new password"
-                        className="max-w-sm h-8 text-sm"
-                      />
+                      <div className="relative max-w-sm">
+                        <Input
+                          id="new-password"
+                          type={showNewPassword ? "text" : "password"}
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          placeholder="Enter new password"
+                          className="h-8 text-sm pr-9"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowNewPassword(!showNewPassword)}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                          {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="confirm-password">Confirm New Password</Label>
-                      <Input
-                        id="confirm-password"
-                        type="password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder="Confirm new password"
-                        className="max-w-sm h-8 text-sm"
-                      />
+                      <div className="relative max-w-sm">
+                        <Input
+                          id="confirm-password"
+                          type={showConfirmPassword ? "text" : "password"}
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          placeholder="Confirm new password"
+                          className="h-8 text-sm pr-9"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                          {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
                     </div>
                     <Button type="submit" size="sm">Update Password</Button>
                   </form>
