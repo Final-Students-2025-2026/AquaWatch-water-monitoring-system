@@ -61,9 +61,12 @@ void drawWiFiIcon(int x, int y, bool connected) {
 // ARDUINO ASSIGNMENT FUNCTIONS
 // ============================================
 String getArduinoMacAddress() {
-  String mac = WiFi.macAddress();
-  mac.toUpperCase();
-  return mac;
+  // Get MAC address after WiFi is connected for stability
+  uint8_t mac[6];
+  WiFi.macAddress(mac);
+  char macStr[18];
+  sprintf(macStr, "%02X:%02X:%02X:%02X:%02X:%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+  return String(macStr);
 }
 
 void displayMacAddressOnOLED() {
