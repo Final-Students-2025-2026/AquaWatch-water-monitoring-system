@@ -310,7 +310,119 @@ def export_readings_csv(request):
         )
 
 
-# Analytics Views
+# Arduino Device Assignment Views
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_arduino_assigned_device(request):
+    """Arduino calls this on startup to get its assigned device_id."""
+    mac_address = request.query_params.get('mac_address')
+    
+    if not mac_address:
+        return Response(
+            {'error': 'mac_address parameter is required'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    try:
+        # Find device assigned to this Arduino MAC address
+        device = Device.objects.filter(arduino_mac_address=mac_address, is_active=True).first()
+        
+        if device:
+            return Response({
+                'device_id': device.id,
+                'device_name': device.device_name,
+                'device_code': device.device_code,
+                'assigned': True
+            })
+        else:
+            return Response({
+                'assigned': False,
+                'message': 'No device assigned to this Arduino. Please assign via dashboard.'
+            })
+    except Exception as e:
+        return Response(
+            {'error': f'Error getting assigned device: {str(e)}'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def assign_arduino_to_device(request):
+    """Assign Arduino to a device via dashboard."""
+    device_id = request.data.get('device_id')
+    mac_address = request.data.get('mac_address')
+    
+    if not device_id or not mac_address:
+        return Response(
+            {'error': 'device_id and mac_address are required'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    try:
+        # Remove Arduino from any previous device assignment
+        Device.objects.filter(arduino_mac_address=mac_address).update(arduino_mac_address=None)
+        
+        # Assign Arduino to the specified device
+        device = Device.objects.get(id=device_id)
+        device.arduino_mac_address = mac_address
+        device.save()
+        
+        return Response({
+            'success': True,
+            'message': f'Arduino assigned to device {device.device_name}',
+            'device_id': device.id
+        })
+    except Device.DoesNotExist:
+        return Response(
+            {'error': 'Device not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Exception as e:
+        return Response(
+            {'error': f'Error assigning Arduino: {str(e)}'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def unassign_arduino(request):
+    """Remove Arduino assignment from a device."""
+    device_id = request.data.get('device_id')
+    
+    if not device_id:
+        return Response(
+            {'error': 'device_id is required'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    try:
+        device = Device.objects.get(id=device_id)
+        mac_address = device.arduino_mac_address
+        
+        if mac_address:
+            device.arduino_mac_address = None
+            device.save()
+            return Response({
+                'success': True,
+                'message': 'Arduino unassigned from device'
+            })
+        else:
+            return Response({
+                'success': False,
+                'message': 'No Arduino assigned to this device'
+            })
+    except Device.DoesNotExist:
+        return Response(
+            {'error': 'Device not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Exception as e:
+        return Response(
+            {'error': f'Error unassigning Arduino: {str(e)}'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def analytics_summary(request):
