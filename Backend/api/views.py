@@ -107,10 +107,9 @@ class SensorReadingListView(generics.ListCreateAPIView):
             # Get or create device using device_code instead of device_id
             device_code = f"ARDUINO_{device_id}"
             device, created = Device.objects.get_or_create(
-                id=device_id,
+                device_code=device_code,
                 defaults={
                     'device_name': f"Arduino Device {device_id}",
-                    'device_code': device_code,
                     'device_type': "IoT Sensor",
                     'organization': org
                 }
