@@ -28,9 +28,4 @@ urlpatterns = [
     
     # Analytics endpoints
     path('analytics/summary/', views.analytics_summary, name='analytics-summary'),
-    
-    # Arduino assignment endpoints
-    path('arduino/assignment/', views.get_arduino_assigned_device, name='get-arduino-assignment'),
-    path('arduino/assign/', views.assign_arduino_to_device, name='assign-arduino'),
-    path('arduino/unassign/', views.unassign_arduino, name='unassign-arduino'),
 ]
