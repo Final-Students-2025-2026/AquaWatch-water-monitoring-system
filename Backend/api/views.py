@@ -128,7 +128,7 @@ def get_latest_reading(request):
         )
     
     try:
-        reading = SensorReading.objects.filter(device_id=device_id).first()
+        reading = SensorReading.objects.filter(device_id=device_id).order_by('-reading_timestamp').first()
         if not reading:
             # Return default values when no readings exist
             return Response({
