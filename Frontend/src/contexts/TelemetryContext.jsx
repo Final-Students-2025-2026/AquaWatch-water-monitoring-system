@@ -194,20 +194,19 @@ const POLL_INTERVAL_MS = 2000;
 async function fetchTelemetryData() {
   if (TELEMETRY_MODE === "HTTP") {
     const token = localStorage.getItem("token");
+    const headers = {};
     
-    if (!token) {
-      console.error("No authentication token found in localStorage");
-      throw new Error("No authentication token available");
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+      console.log("Using token for telemetry request:", token.substring(0, 20) + "...");
+    } else {
+      console.log("No authentication token found, trying without authentication");
     }
-    
-    console.log("Using token for telemetry request:", token.substring(0, 20) + "...");
     
     // First, fetch available devices to get the first active device
     try {
       const devicesResponse = await fetch(`${BACKEND_URL}/api/devices`, {
-        headers: {
-          "Authorization": `Bearer ${token}`
-        }
+        headers
       });
       
       console.log("Devices response status:", devicesResponse.status);
@@ -223,9 +222,7 @@ async function fetchTelemetryData() {
           console.log("Fetching telemetry for device:", deviceId);
           
           const response = await fetch(`${BACKEND_URL}/api/readings/latest/?device_id=${deviceId}`, {
-            headers: {
-              "Authorization": `Bearer ${token}`
-            }
+            headers
           });
           
           console.log("Telemetry response status:", response.status);
@@ -243,9 +240,7 @@ async function fetchTelemetryData() {
     
     // Fallback: try device_id=1 if no active device found or error occurs
     const response = await fetch(`${BACKEND_URL}/api/readings/latest/?device_id=1`, {
-      headers: {
-        "Authorization": `Bearer ${token}`
-      }
+      headers
     });
     if (!response.ok) {
       throw new Error(`HTTP error ${response.status}`);
