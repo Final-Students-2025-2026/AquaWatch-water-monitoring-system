@@ -36,6 +36,13 @@ class DeviceDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = DeviceSerializer
     permission_classes = [IsAuthenticated]
 
+    def destroy(self, request, *args, **kwargs):
+        """Soft delete by setting is_active=False instead of hard delete."""
+        device = self.get_object()
+        device.is_active = False
+        device.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 # Sensor Reading Views
 class SensorReadingListView(generics.ListCreateAPIView):
