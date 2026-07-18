@@ -81,8 +81,19 @@ class SensorReadingListView(generics.ListCreateAPIView):
             if not (0 <= turbidity <= 100):  # Reasonable turbidity range
                 raise ValidationError(f"Turbidity {turbidity} NTU out of valid range (0 to 100)")
             
-            # Get or create device (default to device_id=1 for Arduino)
-            device_id = request.query_params.get('device_id', 1)
+            # Get device_id - prefer query param, then mac_address lookup
+            device_id = request.query_params.get('device_id')
+            mac_address = request.query_params.get('mac_address')
+            
+            if mac_address and not device_id:
+                # Look up device by MAC address assignment
+                device = Device.objects.filter(arduino_mac_address=mac_address, is_active=True).first()
+                if device:
+                    device_id = device.id
+            
+            # Fallback to default device_id if not specified
+            if not device_id:
+                device_id = 1
             
             # Get or create organization first
             org, _ = Organization.objects.get_or_create(
@@ -96,13 +107,19 @@ class SensorReadingListView(generics.ListCreateAPIView):
             # Get or create device using device_code instead of device_id
             device_code = f"ARDUINO_{device_id}"
             device, created = Device.objects.get_or_create(
-                device_code=device_code,
+                id=device_id,
                 defaults={
                     'device_name': f"Arduino Device {device_id}",
+                    'device_code': device_code,
                     'device_type': "IoT Sensor",
                     'organization': org
                 }
             )
+            
+            # Update MAC address if provided
+            if mac_address and device.arduino_mac_address != mac_address:
+                device.arduino_mac_address = mac_address
+                device.save()
             
             # Map Arduino fields to model fields
             reading = SensorReading.objects.create(
@@ -117,7 +134,7 @@ class SensorReadingListView(generics.ListCreateAPIView):
             )
             
             return Response(
-                {'status': 'success', 'reading_id': reading.id},
+                {'status': 'success', 'reading_id': reading.id, 'device_id': device.id},
                 status=status.HTTP_201_CREATED
             )
         except ValidationError as e:
@@ -408,5 +425,120 @@ def analytics_summary(request):
     except Exception as e:
         return Response(
             {'error': f'Error generating analytics: {str(e)}'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+# Arduino Device Assignment Views
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_arduino_assigned_device(request):
+    """Arduino calls this on startup to get its assigned device_id."""
+    mac_address = request.query_params.get('mac_address')
+    
+    if not mac_address:
+        return Response(
+            {'error': 'mac_address parameter is required'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    try:
+        # Find device assigned to this Arduino MAC address
+        device = Device.objects.filter(arduino_mac_address=mac_address, is_active=True).first()
+        
+        if device:
+            return Response({
+                'device_id': device.id,
+                'device_name': device.device_name,
+                'device_code': device.device_code,
+                'assigned': True
+            })
+        else:
+            return Response({
+                'assigned': False,
+                'message': 'No device assigned to this Arduino. Please assign via dashboard.'
+            })
+    except Exception as e:
+        return Response(
+            {'error': f'Error getting assigned device: {str(e)}'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def assign_arduino_to_device(request):
+    """Assign Arduino to a device via dashboard."""
+    device_id = request.data.get('device_id')
+    mac_address = request.data.get('mac_address')
+    
+    if not device_id or not mac_address:
+        return Response(
+            {'error': 'device_id and mac_address are required'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    try:
+        # Remove Arduino from any previous device assignment
+        Device.objects.filter(arduino_mac_address=mac_address).update(arduino_mac_address=None)
+        
+        # Assign Arduino to the specified device
+        device = Device.objects.get(id=device_id)
+        device.arduino_mac_address = mac_address
+        device.save()
+        
+        return Response({
+            'success': True,
+            'message': f'Arduino assigned to device {device.device_name}',
+            'device_id': device.id
+        })
+    except Device.DoesNotExist:
+        return Response(
+            {'error': 'Device not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Exception as e:
+        return Response(
+            {'error': f'Error assigning Arduino: {str(e)}'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def unassign_arduino(request):
+    """Remove Arduino assignment from a device."""
+    device_id = request.data.get('device_id')
+    
+    if not device_id:
+        return Response(
+            {'error': 'device_id is required'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    try:
+        device = Device.objects.get(id=device_id)
+        mac_address = device.arduino_mac_address
+        
+        if mac_address:
+            device.arduino_mac_address = None
+            device.save()
+            return Response({
+                'success': True,
+                'message': 'Arduino unassigned from device'
+            })
+        else:
+            return Response({
+                'success': False,
+                'message': 'No Arduino assigned to this device'
+            })
+    except Device.DoesNotExist:
+        return Response(
+            {'error': 'Device not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Exception as e:
+        return Response(
+            {'error': f'Error unassigning Arduino: {str(e)}'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )

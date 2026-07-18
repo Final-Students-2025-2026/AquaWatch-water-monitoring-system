@@ -11,7 +11,7 @@ import { useToast } from "@/contexts/ToastContext";
 import {
   Wifi, WifiOff, AlertTriangle, CheckCircle2, Battery, Signal,
   Thermometer, Droplets, Zap, FlaskConical, Activity, Eye,
-  MapPin, Clock, Calendar, Plus, Trash2,
+  MapPin, Clock, Calendar, Plus, Trash2, Cpu,
 } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 
@@ -55,6 +55,9 @@ export default function Sensors() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [name, setName] = useState("");
   const [location, setLocation] = useState("");
+  const [macAddress, setMacAddress] = useState("");
+  const [assignmentDialogOpen, setAssignmentDialogOpen] = useState(false);
+  const [selectedSensor, setSelectedSensor] = useState(null);
 
   // PIN modal state for delete action
   const [pinModalOpen, setPinModalOpen] = useState(false);
@@ -85,14 +88,15 @@ export default function Sensors() {
       // Transform backend data to match frontend expectations
       const transformedDevices = devices.map(device => ({
         id: device.device_id,
-        name: device.water_body_name || device.device_code,
-        location: device.location_description || "Unknown",
+        name: device.device_name || device.device_code,
+        location: device.location || "Unknown",
         online: device.is_active,
         status: device.is_active ? "normal" : "offline",
         battery: 85, // Default values since backend doesn't have these
         signal: 92,
         lastReadingAt: device.created_at,
-        installedAt: device.created_at
+        installedAt: device.created_at,
+        arduino_mac_address: device.arduino_mac_address || null
       }));
       
       setSensors(transformedDevices);
@@ -141,6 +145,7 @@ export default function Sensors() {
   async function handleCreate() {
     const trimmedName = name.trim();
     const trimmedLocation = location.trim();
+    const trimmedMac = macAddress.trim();
     if (!trimmedName || !trimmedLocation) {
       alert("Please enter both sensor name and location");
       return;
@@ -156,8 +161,9 @@ export default function Sensors() {
         },
         body: JSON.stringify({
           device_code: `DEVICE_${Date.now()}`,
-          water_body_name: trimmedName,
-          location_description: trimmedLocation
+          device_name: trimmedName,
+          location: trimmedLocation,
+          arduino_mac_address: trimmedMac || null
         })
       });
       if (!response.ok) throw new Error("Failed to create device");
@@ -165,12 +171,49 @@ export default function Sensors() {
       setDialogOpen(false);
       setName("");
       setLocation("");
+      setMacAddress("");
     } catch (error) {
       console.error("Failed to create sensor:", error);
       alert(`Failed to create sensor: ${error?.message || "Unknown error"}`);
     } finally {
       setIsCreating(false);
     }
+  }
+
+  async function handleAssignArduino() {
+    if (!selectedSensor || !macAddress.trim()) {
+      alert("Please enter Arduino MAC address");
+      return;
+    }
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/arduino/assign/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          device_id: selectedSensor.id,
+          mac_address: macAddress.trim()
+        })
+      });
+      if (!response.ok) throw new Error("Failed to assign Arduino");
+      success("Arduino assigned successfully");
+      await loadSensors();
+      setAssignmentDialogOpen(false);
+      setMacAddress("");
+      setSelectedSensor(null);
+    } catch (error) {
+      console.error("Failed to assign Arduino:", error);
+      alert(`Failed to assign Arduino: ${error?.message || "Unknown error"}`);
+    }
+  }
+
+  function openAssignmentDialog(sensor) {
+    setSelectedSensor(sensor);
+    setMacAddress(sensor.arduino_mac_address || "");
+    setAssignmentDialogOpen(true);
   }
 
   function handleDeleteRequest(id) {
@@ -285,16 +328,33 @@ export default function Sensors() {
                       >
                         {sc.label}
                       </Badge>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="w-6 h-6 text-muted-foreground hover:text-destructive"
-                        data-testid={`button-delete-sensor-${sensor.id}`}
-                        onClick={() => handleDeleteRequest(sensor.id)}
-                        disabled={isDeleting}
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </Button>
+                      {sensor.arduino_mac_address && (
+                        <Badge variant="outline" className="text-xs">
+                          <Cpu className="w-3 h-3 mr-1" />
+                          Arduino Assigned
+                        </Badge>
+                      )}
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="w-6 h-6 text-muted-foreground hover:text-primary"
+                          data-testid={`button-assign-arduino-${sensor.id}`}
+                          onClick={() => openAssignmentDialog(sensor)}
+                        >
+                          <Cpu className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="w-6 h-6 text-muted-foreground hover:text-destructive"
+                          data-testid={`button-delete-sensor-${sensor.id}`}
+                          onClick={() => handleDeleteRequest(sensor.id)}
+                          disabled={isDeleting}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </CardHeader>
@@ -378,6 +438,19 @@ export default function Sensors() {
                 data-testid="input-sensor-location"
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="arduino-mac">Arduino MAC Address (Optional)</Label>
+              <Input
+                id="arduino-mac"
+                placeholder="e.g. AA:BB:CC:DD:EE:FF"
+                value={macAddress}
+                onChange={(e) => setMacAddress(e.target.value)}
+                data-testid="input-arduino-mac"
+              />
+              <p className="text-xs text-muted-foreground">
+                Enter Arduino MAC address to auto-assign this sensor. Leave empty to assign later.
+              </p>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
@@ -387,6 +460,43 @@ export default function Sensors() {
               data-testid="button-confirm-add-sensor"
             >
               {isCreating ? "Registering…" : "Register Sensor"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Arduino Assignment Dialog */}
+      <Dialog open={assignmentDialogOpen} onOpenChange={setAssignmentDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assign Arduino to Sensor</DialogTitle>
+            <DialogDescription>
+              Enter the Arduino MAC address to assign it to {selectedSensor?.name}. The Arduino will automatically use this sensor for data collection.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="assignment-mac">Arduino MAC Address</Label>
+              <Input
+                id="assignment-mac"
+                placeholder="e.g. AA:BB:CC:DD:EE:FF"
+                value={macAddress}
+                onChange={(e) => setMacAddress(e.target.value)}
+                data-testid="input-assignment-mac"
+              />
+              <p className="text-xs text-muted-foreground">
+                Find your Arduino MAC address on the OLED screen or Serial Monitor
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAssignmentDialogOpen(false)}>Cancel</Button>
+            <Button
+              onClick={handleAssignArduino}
+              disabled={!macAddress.trim()}
+              data-testid="button-confirm-assign-arduino"
+            >
+              Assign Arduino
             </Button>
           </DialogFooter>
         </DialogContent>
