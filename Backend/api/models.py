@@ -18,7 +18,7 @@ class Organization(models.Model):
 
 
 class Device(models.Model):
-    device_id = models.AutoField(primary_key=True)
+    id = models.AutoField(primary_key=True)
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
     device_name = models.CharField(max_length=255)
     device_code = models.CharField(max_length=100, unique=True)
@@ -38,7 +38,7 @@ class Device(models.Model):
 
 
 class SensorReading(models.Model):
-    reading_id = models.AutoField(primary_key=True)
+    id = models.AutoField(primary_key=True)
     device = models.ForeignKey(Device, on_delete=models.CASCADE)
     reading_timestamp = models.DateTimeField(auto_now_add=True)
     ph_value = models.FloatField()

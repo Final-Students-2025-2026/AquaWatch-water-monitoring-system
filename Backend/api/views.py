@@ -70,21 +70,16 @@ class SensorReadingListView(generics.ListCreateAPIView):
                 }
             )
             
-            # Get or create device
+            # Get or create device using device_code instead of device_id
+            device_code = f"ARDUINO_{device_id}"
             device, created = Device.objects.get_or_create(
-                device_id=device_id,
+                device_code=device_code,
                 defaults={
                     'device_name': f"Arduino Device {device_id}",
-                    'device_code': f"ARDUINO_{device_id}",
                     'device_type': "IoT Sensor",
                     'organization': org
                 }
             )
-            
-            # If device existed but has different code, update it
-            if not created and device.device_code != f"ARDUINO_{device_id}":
-                device.device_code = f"ARDUINO_{device_id}"
-                device.save()
             
             # Map Arduino fields to model fields
             reading = SensorReading.objects.create(
@@ -99,7 +94,7 @@ class SensorReadingListView(generics.ListCreateAPIView):
             )
             
             return Response(
-                {'status': 'success', 'reading_id': reading.reading_id},
+                {'status': 'success', 'reading_id': reading.id},
                 status=status.HTTP_201_CREATED
             )
         except Exception as e:

@@ -10,6 +10,7 @@ class OrganizationSerializer(serializers.ModelSerializer):
 
 class DeviceSerializer(serializers.ModelSerializer):
     organization_name = serializers.CharField(source='organization.organization_name', read_only=True)
+    device_id = serializers.IntegerField(source='id', read_only=True)
     
     class Meta:
         model = Device
@@ -21,10 +22,12 @@ class DeviceSerializer(serializers.ModelSerializer):
 class SensorReadingSerializer(serializers.ModelSerializer):
     device_name = serializers.CharField(source='device.device_name', read_only=True)
     device_code = serializers.CharField(source='device.device_code', read_only=True)
+    reading_id = serializers.IntegerField(source='id', read_only=True)
+    device_id = serializers.IntegerField(source='device.id', read_only=True)
     
     class Meta:
         model = SensorReading
-        fields = ['reading_id', 'device', 'device_name', 'device_code', 'reading_timestamp',
+        fields = ['reading_id', 'device', 'device_id', 'device_name', 'device_code', 'reading_timestamp',
                   'ph_value', 'turbidity_value', 'tds_value', 'temperature_celsius', 
                   'ec_value', 'is_alert', 'alert_reason']
         read_only_fields = ['reading_id', 'reading_timestamp']
