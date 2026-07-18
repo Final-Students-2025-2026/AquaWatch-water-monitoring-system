@@ -6,8 +6,6 @@ from django.db.models import Q
 from django.http import HttpResponse
 from datetime import datetime, timezone, timedelta
 from django.utils import timezone as django_timezone
-from django.core.validators import MinValueValidator, MaxValueValidator
-from django.core.exceptions import ValidationError
 import csv
 
 from .models import Organization, Device, SensorReading, Threshold, Alert
@@ -62,25 +60,6 @@ class SensorReadingListView(generics.ListCreateAPIView):
                     key, value = item.split(':', 1)
                     data_dict[key.strip()] = value.strip()
             
-            # Validate sensor data ranges
-            temp = float(data_dict.get('TEMP', 0))
-            ph = float(data_dict.get('PH', 0))
-            tds = float(data_dict.get('TDS', 0))
-            ec = float(data_dict.get('EC', 0))
-            turbidity = float(data_dict.get('NTU', 0))
-            
-            # Add reasonable range validation
-            if not (-50 <= temp <= 100):  # Reasonable temperature range
-                raise ValidationError(f"Temperature {temp}°C out of valid range (-50 to 100)")
-            if not (0 <= ph <= 14):  # Valid pH range
-                raise ValidationError(f"pH {ph} out of valid range (0 to 14)")
-            if not (0 <= tds <= 5000):  # Reasonable TDS range
-                raise ValidationError(f"TDS {tds} mg/L out of valid range (0 to 5000)")
-            if not (0 <= ec <= 5000):  # Reasonable EC range
-                raise ValidationError(f"EC {ec} µS/cm out of valid range (0 to 5000)")
-            if not (0 <= turbidity <= 100):  # Reasonable turbidity range
-                raise ValidationError(f"Turbidity {turbidity} NTU out of valid range (0 to 100)")
-            
             # Get device_id - prefer query param, then mac_address lookup
             device_id = request.query_params.get('device_id')
             mac_address = request.query_params.get('mac_address')
@@ -89,11 +68,11 @@ class SensorReadingListView(generics.ListCreateAPIView):
                 # Look up device by MAC address assignment
                 device = Device.objects.filter(arduino_mac_address=mac_address, is_active=True).first()
                 if device:
-                    device_id = device.id
+                    device_id = str(device.id)
             
             # Fallback to default device_id if not specified
             if not device_id:
-                device_id = 1
+                device_id = "1"
             
             # Get or create organization first
             org, _ = Organization.objects.get_or_create(
@@ -104,7 +83,7 @@ class SensorReadingListView(generics.ListCreateAPIView):
                 }
             )
             
-            # Get or create device using device_code instead of device_id
+            # Get or create device using device_code
             device_code = f"ARDUINO_{device_id}"
             device, created = Device.objects.get_or_create(
                 device_code=device_code,
@@ -115,31 +94,21 @@ class SensorReadingListView(generics.ListCreateAPIView):
                 }
             )
             
-            # Update MAC address if provided
-            if mac_address and device.arduino_mac_address != mac_address:
-                device.arduino_mac_address = mac_address
-                device.save()
-            
             # Map Arduino fields to model fields
             reading = SensorReading.objects.create(
                 device=device,
-                temperature_celsius=temp,
-                tds_value=tds,
-                ec_value=ec,
-                turbidity_value=turbidity,
-                ph_value=ph,
+                temperature_celsius=float(data_dict.get('TEMP', 0)),
+                tds_value=float(data_dict.get('TDS', 0)),
+                ec_value=float(data_dict.get('EC', 0)),
+                turbidity_value=float(data_dict.get('NTU', 0)),
+                ph_value=float(data_dict.get('PH', 0)),
                 is_alert=int(data_dict.get('TIER', 0)) > 0,
                 alert_reason=f"TIER: {data_dict.get('TIER', 0)}, ORP: {data_dict.get('ORP', 0)}" if int(data_dict.get('TIER', 0)) > 0 else None
             )
             
             return Response(
-                {'status': 'success', 'reading_id': reading.id, 'device_id': device.id},
+                {'status': 'success', 'reading_id': reading.id},
                 status=status.HTTP_201_CREATED
-            )
-        except ValidationError as e:
-            return Response(
-                {'status': 'error', 'message': f'Validation error: {str(e)}'},
-                status=status.HTTP_400_BAD_REQUEST
             )
         except Exception as e:
             import traceback
