@@ -68,6 +68,7 @@ class SensorReadingListView(generics.ListCreateAPIView):
         try:
             # Parse plain text format: TEMP:27.1,TDS:77,EC:121,NTU:8.4,PH:0.00,ORP:414,TIER:2
             data_str = request.body.decode('utf-8')
+            print(f"DEBUG POST: Received data: {data_str}")
             data_dict = {}
             
             for item in data_str.split(','):
@@ -75,8 +76,11 @@ class SensorReadingListView(generics.ListCreateAPIView):
                     key, value = item.split(':', 1)
                     data_dict[key.strip()] = value.strip()
             
+            print(f"DEBUG POST: Parsed data: {data_dict}")
+            
             # Get or create device (default to device_id=1 for Arduino)
             device_id = request.query_params.get('device_id', 1)
+            print(f"DEBUG POST: device_id from query: {device_id}")
             
             # Get or create organization first
             org, _ = Organization.objects.get_or_create(
@@ -97,6 +101,7 @@ class SensorReadingListView(generics.ListCreateAPIView):
                     'organization': org
                 }
             )
+            print(f"DEBUG POST: Device ID: {device.id}, created: {created}")
             
             # Map Arduino fields to model fields
             reading = SensorReading.objects.create(
@@ -109,6 +114,8 @@ class SensorReadingListView(generics.ListCreateAPIView):
                 is_alert=int(data_dict.get('TIER', 0)) > 0,
                 alert_reason=f"TIER: {data_dict.get('TIER', 0)}, ORP: {data_dict.get('ORP', 0)}" if int(data_dict.get('TIER', 0)) > 0 else None
             )
+            
+            print(f"DEBUG POST: Created reading ID: {reading.id}, timestamp: {reading.reading_timestamp}")
             
             return Response(
                 {'status': 'success', 'reading_id': reading.id},
