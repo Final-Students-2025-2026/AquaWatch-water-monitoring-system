@@ -60,19 +60,8 @@ class SensorReadingListView(generics.ListCreateAPIView):
                     key, value = item.split(':', 1)
                     data_dict[key.strip()] = value.strip()
             
-            # Get device_id - prefer query param, then mac_address lookup
-            device_id = request.query_params.get('device_id')
-            mac_address = request.query_params.get('mac_address')
-            
-            if mac_address and not device_id:
-                # Look up device by MAC address assignment
-                device = Device.objects.filter(arduino_mac_address=mac_address, is_active=True).first()
-                if device:
-                    device_id = str(device.id)
-            
-            # Fallback to default device_id if not specified
-            if not device_id:
-                device_id = "1"
+            # Get or create device (default to device_id=1 for Arduino)
+            device_id = request.query_params.get('device_id', 1)
             
             # Get or create organization first
             org, _ = Organization.objects.get_or_create(
