@@ -188,20 +188,40 @@ function generateMockTelemetry() {
 const TELEMETRY_MODE = import.meta.env.VITE_TELEMETRY_MODE || "HTTP";
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
 const WS_URL = import.meta.env.VITE_WS_URL || "ws://127.0.0.1:8000/ws/telemetry";
-const DEFAULT_DEVICE_ID = 1;
 const POLL_INTERVAL_MS = 2000;
 
 // Real API/WebSocket connector - isolated for easy swap
 async function fetchTelemetryData() {
   if (TELEMETRY_MODE === "HTTP") {
-    // Real backend HTTP call
-    const response = await fetch(`${BACKEND_URL}/api/readings/latest/?device_id=${DEFAULT_DEVICE_ID}`);
+    // First, fetch available devices to get the first active device
+    try {
+      const devicesResponse = await fetch(`${BACKEND_URL}/api/devices`);
+      if (devicesResponse.ok) {
+        const devices = await devicesResponse.json();
+        const devicesArray = Array.isArray(devices) ? devices : (devices?.results || []);
+        
+        // Find the first active device
+        const activeDevice = devicesArray.find(d => d.is_active);
+        if (activeDevice) {
+          const deviceId = activeDevice.device_id || activeDevice.id;
+          const response = await fetch(`${BACKEND_URL}/api/readings/latest/?device_id=${deviceId}`);
+          if (!response.ok) {
+            throw new Error(`HTTP error ${response.status}`);
+          }
+          const data = await response.json();
+          return data;
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching devices, using fallback:", error);
+    }
+    
+    // Fallback: try device_id=1 if no active device found or error occurs
+    const response = await fetch(`${BACKEND_URL}/api/readings/latest/?device_id=1`);
     if (!response.ok) {
       throw new Error(`HTTP error ${response.status}`);
     }
     const data = await response.json();
-    
-    // Backend now returns default values when no readings exist
     return data;
   }
 
@@ -209,7 +229,7 @@ async function fetchTelemetryData() {
   const mockData = generateMockTelemetry();
   return {
     reading_id: 0,
-    device_id: DEFAULT_DEVICE_ID,
+    device_id: 1,
     reading_timestamp: mockData.timestamp,
     ph_value: mockData.ph,
     turbidity_value: mockData.turb,
