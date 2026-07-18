@@ -119,7 +119,7 @@ class SensorReadingListView(generics.ListCreateAPIView):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def get_latest_reading(request):
-    """Get the latest reading for a device."""
+    """Get the latest reading for a device. Returns most recent by timestamp."""
     device_id = request.query_params.get('device_id')
     if not device_id:
         return Response(
