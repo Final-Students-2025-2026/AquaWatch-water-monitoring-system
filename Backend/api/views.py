@@ -40,11 +40,9 @@ class SensorReadingListView(generics.ListCreateAPIView):
             return SensorReading.objects.filter(device_id=device_id)
         return SensorReading.objects.all()
 
+    @permission_classes([AllowAny])
     def create(self, request, *args, **kwargs):
         """Handle Arduino sensor data POST requests."""
-        from rest_framework.permissions import AllowAny
-        self.permission_classes = [AllowAny]
-        
         try:
             # Parse plain text format: TEMP:27.1,TDS:77,EC:121,NTU:8.4,PH:0.00,ORP:414,TIER:2
             data_str = request.body.decode('utf-8')
