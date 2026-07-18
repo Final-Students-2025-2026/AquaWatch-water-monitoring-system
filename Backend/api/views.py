@@ -128,6 +128,14 @@ def get_latest_reading(request):
         )
     
     try:
+        # Debug: Check all readings for this device
+        all_readings = SensorReading.objects.filter(device_id=device_id)
+        print(f"DEBUG: Total readings for device {device_id}: {all_readings.count()}")
+        if all_readings.exists():
+            latest = all_readings.order_by('-reading_timestamp').first()
+            print(f"DEBUG: Latest reading ID: {latest.id}, timestamp: {latest.reading_timestamp}")
+            print(f"DEBUG: Last 3 readings: {list(all_readings.order_by('-reading_timestamp')[:3].values('id', 'reading_timestamp', 'tds_value'))}")
+        
         reading = SensorReading.objects.filter(device_id=device_id).order_by('-reading_timestamp').first()
         if not reading:
             # Return default values when no readings exist
