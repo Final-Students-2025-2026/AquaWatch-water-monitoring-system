@@ -60,16 +60,31 @@ class SensorReadingListView(generics.ListCreateAPIView):
             
             # Get or create device (default to device_id=1 for Arduino)
             device_id = request.query_params.get('device_id', 1)
-            try:
-                device = Device.objects.get(device_id=device_id)
-            except Device.DoesNotExist:
-                # Create a default device for Arduino if it doesn't exist
-                device = Device.objects.create(
-                    device_name=f"Arduino Device {device_id}",
-                    device_code=f"ARDUINO_{device_id}",
-                    device_type="IoT Sensor",
-                    organization_id=1
-                )
+            
+            # Get or create organization first
+            org, _ = Organization.objects.get_or_create(
+                organization_id=1,
+                defaults={
+                    'organization_name': "Default Organization",
+                    'organization_type': "Default"
+                }
+            )
+            
+            # Get or create device
+            device, created = Device.objects.get_or_create(
+                device_id=device_id,
+                defaults={
+                    'device_name': f"Arduino Device {device_id}",
+                    'device_code': f"ARDUINO_{device_id}",
+                    'device_type': "IoT Sensor",
+                    'organization': org
+                }
+            )
+            
+            # If device existed but has different code, update it
+            if not created and device.device_code != f"ARDUINO_{device_id}":
+                device.device_code = f"ARDUINO_{device_id}"
+                device.save()
             
             # Map Arduino fields to model fields
             reading = SensorReading.objects.create(
@@ -88,8 +103,10 @@ class SensorReadingListView(generics.ListCreateAPIView):
                 status=status.HTTP_201_CREATED
             )
         except Exception as e:
+            import traceback
+            error_details = traceback.format_exc()
             return Response(
-                {'status': 'error', 'message': str(e)},
+                {'status': 'error', 'message': str(e), 'details': error_details},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
