@@ -324,10 +324,21 @@ def get_arduino_assigned_device(request):
         )
     
     try:
-        # Find device assigned to this Arduino MAC address
+        # Debug logging
+        print(f"DEBUG: Looking for device with MAC: {mac_address}")
+        
+        # First try without is_active filter to see if device exists
+        device_any = Device.objects.filter(arduino_mac_address=mac_address).first()
+        if device_any:
+            print(f"DEBUG: Found device with MAC, is_active: {device_any.is_active}, device_id: {device_any.id}")
+        else:
+            print(f"DEBUG: No device found with MAC: {mac_address}")
+        
+        # Find device assigned to this Arduino MAC address (must be active)
         device = Device.objects.filter(arduino_mac_address=mac_address, is_active=True).first()
         
         if device:
+            print(f"DEBUG: Returning assigned device: {device.id}")
             return Response({
                 'device_id': device.id,
                 'device_name': device.device_name,
@@ -335,6 +346,7 @@ def get_arduino_assigned_device(request):
                 'assigned': True
             })
         else:
+            print(f"DEBUG: No active device assigned for MAC: {mac_address}")
             return Response({
                 'assigned': False,
                 'message': 'No device assigned to this Arduino. Please assign via dashboard.'
@@ -512,10 +524,21 @@ def get_arduino_assigned_device(request):
         )
     
     try:
-        # Find device assigned to this Arduino MAC address
+        # Debug logging
+        print(f"DEBUG: Looking for device with MAC: {mac_address}")
+        
+        # First try without is_active filter to see if device exists
+        device_any = Device.objects.filter(arduino_mac_address=mac_address).first()
+        if device_any:
+            print(f"DEBUG: Found device with MAC, is_active: {device_any.is_active}, device_id: {device_any.id}")
+        else:
+            print(f"DEBUG: No device found with MAC: {mac_address}")
+        
+        # Find device assigned to this Arduino MAC address (must be active)
         device = Device.objects.filter(arduino_mac_address=mac_address, is_active=True).first()
         
         if device:
+            print(f"DEBUG: Returning assigned device: {device.id}")
             return Response({
                 'device_id': device.id,
                 'device_name': device.device_name,
@@ -523,6 +546,7 @@ def get_arduino_assigned_device(request):
                 'assigned': True
             })
         else:
+            print(f"DEBUG: No active device assigned for MAC: {mac_address}")
             return Response({
                 'assigned': False,
                 'message': 'No device assigned to this Arduino. Please assign via dashboard.'
