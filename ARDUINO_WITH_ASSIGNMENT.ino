@@ -116,41 +116,38 @@ void queryAssignedDevice() {
     Serial.print("Response: ");
     Serial.println(response);
     
-    // Parse JSON response
-    int assignedIndex = response.indexOf("\"assigned\":true");
-    if (assignedIndex != -1) {
-      int deviceIdIndex = response.indexOf("\"device_id\":");
-      if (deviceIdIndex != -1) {
-        int start = deviceIdIndex + 13;
-        int end = response.indexOf(",", start);
-        if (end == -1) end = response.indexOf("}", start);
-        assignedDeviceId = response.substring(start, end);
-        
-        Serial.println("---------------------------------");
-        Serial.println("✓ DEVICE ASSIGNMENT SUCCESSFUL");
-        Serial.println("---------------------------------");
-        Serial.print("Assigned Device ID: ");
-        Serial.println(assignedDeviceId);
-        Serial.println("Arduino will now send data to this device.");
-        Serial.println("=================================\n");
-        
-        display.clearDisplay();
-        display.setTextSize(1);
-        display.setTextColor(SH110X_WHITE);
-        display.setCursor(0, 0);
-        display.println("Arduino Assigned:");
-        display.print("Device ID: ");
-        display.println(assignedDeviceId);
-        display.display();
-      }
+    // Parse JSON response for device_id
+    int deviceIdIndex = response.indexOf("\"device_id\":");
+    if (deviceIdIndex != -1) {
+      int start = deviceIdIndex + 12; // Skip "device_id":
+      int end = response.indexOf(",", start);
+      if (end == -1) end = response.indexOf("}", start);
+      assignedDeviceId = response.substring(start, end);
+      assignedDeviceId.trim(); // Remove any whitespace
+      
+      Serial.println("---------------------------------");
+      Serial.println("✓ DEVICE ASSIGNMENT SUCCESSFUL");
+      Serial.println("---------------------------------");
+      Serial.print("Assigned Device ID: ");
+      Serial.println(assignedDeviceId);
+      Serial.println("Arduino will now send data to this device.");
+      Serial.println("=================================\n");
+      
+      display.clearDisplay();
+      display.setTextSize(1);
+      display.setTextColor(SH110X_WHITE);
+      display.setCursor(0, 0);
+      display.println("Arduino Assigned:");
+      display.print("Device ID: ");
+      display.println(assignedDeviceId);
+      display.display();
     } else {
       Serial.println("---------------------------------");
-      Serial.println("✗ NO DEVICE ASSIGNED");
+      Serial.println("✗ NO DEVICE ID IN RESPONSE");
       Serial.println("---------------------------------");
-      Serial.println("This Arduino is not assigned to any sensor.");
+      Serial.println("Backend response missing device_id.");
       Serial.print("Using default device ID: ");
       Serial.println(assignedDeviceId);
-      Serial.println("Please assign this Arduino via dashboard using MAC address.");
       Serial.println("=================================\n");
     }
   } else {
