@@ -107,6 +107,8 @@ function parseHardwareData(dataString) {
 // Backend schema: temperature_celsius, tds_value, turbidity_value, ph_value
 // Frontend schema: temp, tds, turb, ph, ec (derived)
 function normalizeBackendData(data) {
+  console.log("Raw backend data:", data);
+  
   if (!data || typeof data !== "object") {
     return {};
   }
@@ -239,9 +241,13 @@ export function TelemetryProvider({ children }) {
   const [history, setHistory] = useState([]);
 
   const processTelemetryData = useCallback((rawData) => {
+    console.log("Processing telemetry data:", rawData);
+    
     // Check if backend indicates no readings exist
     const hasNoReadings = rawData?.message && rawData.message.toLowerCase().includes("no readings");
     const data = normalizeBackendData(rawData);
+    
+    console.log("Normalized data:", data);
 
     // Treat all-zero readings as no data (real hardware cannot have all zeros)
     const isAllZero =
