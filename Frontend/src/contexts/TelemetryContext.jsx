@@ -193,9 +193,15 @@ const POLL_INTERVAL_MS = 2000;
 // Real API/WebSocket connector - isolated for easy swap
 async function fetchTelemetryData() {
   if (TELEMETRY_MODE === "HTTP") {
+    const token = localStorage.getItem("token");
+    
     // First, fetch available devices to get the first active device
     try {
-      const devicesResponse = await fetch(`${BACKEND_URL}/api/devices`);
+      const devicesResponse = await fetch(`${BACKEND_URL}/api/devices`, {
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
       if (devicesResponse.ok) {
         const devices = await devicesResponse.json();
         const devicesArray = Array.isArray(devices) ? devices : (devices?.results || []);
@@ -204,7 +210,11 @@ async function fetchTelemetryData() {
         const activeDevice = devicesArray.find(d => d.is_active);
         if (activeDevice) {
           const deviceId = activeDevice.device_id || activeDevice.id;
-          const response = await fetch(`${BACKEND_URL}/api/readings/latest/?device_id=${deviceId}`);
+          const response = await fetch(`${BACKEND_URL}/api/readings/latest/?device_id=${deviceId}`, {
+            headers: {
+              "Authorization": `Bearer ${token}`
+            }
+          });
           if (!response.ok) {
             throw new Error(`HTTP error ${response.status}`);
           }
@@ -217,7 +227,11 @@ async function fetchTelemetryData() {
     }
     
     // Fallback: try device_id=1 if no active device found or error occurs
-    const response = await fetch(`${BACKEND_URL}/api/readings/latest/?device_id=1`);
+    const response = await fetch(`${BACKEND_URL}/api/readings/latest/?device_id=1`, {
+      headers: {
+        "Authorization": `Bearer ${token}`
+      }
+    });
     if (!response.ok) {
       throw new Error(`HTTP error ${response.status}`);
     }
