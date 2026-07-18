@@ -94,6 +94,10 @@ class SensorReadingListView(generics.ListCreateAPIView):
             # Get device using numeric device_id directly
             try:
                 device = Device.objects.get(id=device_id)
+                # Ensure device is active when Arduino posts to it
+                if not device.is_active:
+                    device.is_active = True
+                    device.save()
                 print(f"DEBUG POST: Found device ID: {device.id}")
             except Device.DoesNotExist:
                 # Fallback to device_code if numeric ID not found
@@ -103,7 +107,8 @@ class SensorReadingListView(generics.ListCreateAPIView):
                     defaults={
                         'device_name': f"Arduino Device {device_id}",
                         'device_type': "IoT Sensor",
-                        'organization': org
+                        'organization': org,
+                        'is_active': True  # Ensure new devices are active
                     }
                 )
                 print(f"DEBUG POST: Created device from code, ID: {device.id}")
