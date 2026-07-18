@@ -34,13 +34,18 @@ class SensorReadingListView(generics.ListCreateAPIView):
     serializer_class = SensorReadingSerializer
     permission_classes = [IsAuthenticated]
 
+    def get_permissions(self):
+        """Return different permissions based on request method."""
+        if self.request.method == 'POST':
+            return [AllowAny()]
+        return [IsAuthenticated()]
+
     def get_queryset(self):
         device_id = self.request.query_params.get('device_id')
         if device_id:
             return SensorReading.objects.filter(device_id=device_id)
         return SensorReading.objects.all()
 
-    @permission_classes([AllowAny])
     def create(self, request, *args, **kwargs):
         """Handle Arduino sensor data POST requests."""
         try:
