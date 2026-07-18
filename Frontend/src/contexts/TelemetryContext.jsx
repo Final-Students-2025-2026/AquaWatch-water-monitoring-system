@@ -239,9 +239,15 @@ export function TelemetryProvider({ children }) {
   const [history, setHistory] = useState([]);
 
   const processTelemetryData = useCallback((rawData) => {
+    console.log("=== TELEMETRY PROCESSING DEBUG ===");
+    console.log("Raw backend data:", rawData);
+    
     // Check if backend indicates no readings exist
     const hasNoReadings = rawData?.message && rawData.message.toLowerCase().includes("no readings");
     const data = normalizeBackendData(rawData);
+    
+    console.log("Normalized data:", data);
+    console.log("hasNoReadings:", hasNoReadings);
 
     // Treat all-zero readings as no data (real hardware cannot have all zeros)
     const isAllZero =
@@ -250,8 +256,12 @@ export function TelemetryProvider({ children }) {
       data.turb === 0 &&
       data.ph === 0 &&
       data.ec === 0;
+    
+    console.log("isAllZero check:", isAllZero);
+    console.log("Individual values - temp:", data.temp, "tds:", data.tds, "turb:", data.turb, "ph:", data.ph, "ec:", data.ec);
 
     if (hasNoReadings || isAllZero) {
+      console.log("Setting hasData: false due to hasNoReadings or isAllZero");
       setTelemetry((prev) => ({
         ...prev,
         temp: null,
@@ -275,6 +285,7 @@ export function TelemetryProvider({ children }) {
       severity: data.severity,
     });
 
+    console.log("Setting hasData: true with valid data");
     setTelemetry((prev) => ({
       ...prev,
       temp: data.temp,
