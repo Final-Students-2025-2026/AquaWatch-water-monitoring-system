@@ -10,6 +10,7 @@ urlpatterns = [
     path('readings/', views.SensorReadingListView.as_view(), name='reading-list'),
     path('readings/latest/', views.get_latest_reading, name='latest-reading'),
     path('readings/history/', views.get_readings_history, name='readings-history'),
+    path('readings/export/csv/', views.export_readings_csv, name='export-readings-csv'),
     
     # Threshold endpoints
     path('thresholds/', views.ThresholdListCreateView.as_view(), name='threshold-list-create'),
@@ -24,4 +25,7 @@ urlpatterns = [
     
     # Dashboard endpoints
     path('dashboard/summary/', views.dashboard_summary, name='dashboard-summary'),
+    
+    # Analytics endpoints
+    path('analytics/summary/', views.analytics_summary, name='analytics-summary'),
 ]
