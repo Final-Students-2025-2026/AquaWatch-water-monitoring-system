@@ -193,59 +193,14 @@ const POLL_INTERVAL_MS = 2000;
 // Real API/WebSocket connector - isolated for easy swap
 async function fetchTelemetryData() {
   if (TELEMETRY_MODE === "HTTP") {
-    const token = localStorage.getItem("token");
-    const headers = {};
-    
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-      console.log("Using token for telemetry request:", token.substring(0, 20) + "...");
-    } else {
-      console.log("No authentication token found, trying without authentication");
-    }
-    
-    // First, fetch available devices to get the first active device
-    try {
-      const devicesResponse = await fetch(`${BACKEND_URL}/api/devices`, {
-        headers
-      });
-      
-      console.log("Devices response status:", devicesResponse.status);
-      
-      if (devicesResponse.ok) {
-        const devices = await devicesResponse.json();
-        const devicesArray = Array.isArray(devices) ? devices : (devices?.results || []);
-        
-        // Find the first active device
-        const activeDevice = devicesArray.find(d => d.is_active);
-        if (activeDevice) {
-          const deviceId = activeDevice.device_id || activeDevice.id;
-          console.log("Fetching telemetry for device:", deviceId);
-          
-          const response = await fetch(`${BACKEND_URL}/api/readings/latest/?device_id=${deviceId}`, {
-            headers
-          });
-          
-          console.log("Telemetry response status:", response.status);
-          
-          if (!response.ok) {
-            throw new Error(`HTTP error ${response.status}`);
-          }
-          const data = await response.json();
-          return data;
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching devices, using fallback:", error);
-    }
-    
-    // Fallback: try device_id=1 if no active device found or error occurs
-    const response = await fetch(`${BACKEND_URL}/api/readings/latest/?device_id=1`, {
-      headers
-    });
+    // Real backend HTTP call
+    const response = await fetch(`${BACKEND_URL}/api/readings/latest/?device_id=1`);
     if (!response.ok) {
       throw new Error(`HTTP error ${response.status}`);
     }
     const data = await response.json();
+    
+    // Backend now returns default values when no readings exist
     return data;
   }
 
