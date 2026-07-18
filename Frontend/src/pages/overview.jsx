@@ -42,21 +42,22 @@ export default function Overview() {
       setIsLoading(true);
       try {
         const token = localStorage.getItem("token");
+        const headers = {};
+        
+        if (token) {
+          headers["Authorization"] = `Bearer ${token}`;
+        }
         
         // Load devices (sensors)
         const devicesResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/devices`, {
-          headers: {
-            "Authorization": `Bearer ${token}`
-          }
+          headers
         });
         const devicesData = devicesResponse.ok ? await devicesResponse.json() : [];
         const safeDevicesData = Array.isArray(devicesData) ? devicesData : [];
         
         // Load alerts for summary
         const alertsResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/alerts`, {
-          headers: {
-            "Authorization": `Bearer ${token}`
-          }
+          headers
         });
         const alertsData = alertsResponse.ok ? await alertsResponse.json() : [];
         const safeAlertsData = Array.isArray(alertsData) ? alertsData : [];
