@@ -30,7 +30,7 @@ class DeviceDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 # Sensor Reading Views
-class SensorReadingListView(generics.ListAPIView):
+class SensorReadingListView(generics.ListCreateAPIView):
     serializer_class = SensorReadingSerializer
     permission_classes = [IsAuthenticated]
 
@@ -39,6 +39,56 @@ class SensorReadingListView(generics.ListAPIView):
         if device_id:
             return SensorReading.objects.filter(device_id=device_id)
         return SensorReading.objects.all()
+
+    def create(self, request, *args, **kwargs):
+        """Handle Arduino sensor data POST requests."""
+        from rest_framework.permissions import AllowAny
+        self.permission_classes = [AllowAny]
+        
+        try:
+            # Parse plain text format: TEMP:27.1,TDS:77,EC:121,NTU:8.4,PH:0.00,ORP:414,TIER:2
+            data_str = request.body.decode('utf-8')
+            data_dict = {}
+            
+            for item in data_str.split(','):
+                if ':' in item:
+                    key, value = item.split(':', 1)
+                    data_dict[key.strip()] = value.strip()
+            
+            # Get or create device (default to device_id=1 for Arduino)
+            device_id = request.query_params.get('device_id', 1)
+            try:
+                device = Device.objects.get(device_id=device_id)
+            except Device.DoesNotExist:
+                # Create a default device for Arduino if it doesn't exist
+                device = Device.objects.create(
+                    device_name=f"Arduino Device {device_id}",
+                    device_code=f"ARDUINO_{device_id}",
+                    device_type="IoT Sensor",
+                    organization_id=1
+                )
+            
+            # Map Arduino fields to model fields
+            reading = SensorReading.objects.create(
+                device=device,
+                temperature_celsius=float(data_dict.get('TEMP', 0)),
+                tds_value=float(data_dict.get('TDS', 0)),
+                ec_value=float(data_dict.get('EC', 0)),
+                turbidity_value=float(data_dict.get('NTU', 0)),
+                ph_value=float(data_dict.get('PH', 0)),
+                is_alert=int(data_dict.get('TIER', 0)) > 0,
+                alert_reason=f"TIER: {data_dict.get('TIER', 0)}, ORP: {data_dict.get('ORP', 0)}" if int(data_dict.get('TIER', 0)) > 0 else None
+            )
+            
+            return Response(
+                {'status': 'success', 'reading_id': reading.reading_id},
+                status=status.HTTP_201_CREATED
+            )
+        except Exception as e:
+            return Response(
+                {'status': 'error', 'message': str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 
 @api_view(['GET'])
