@@ -24,6 +24,12 @@ class DeviceListCreateView(generics.ListCreateAPIView):
     serializer_class = DeviceSerializer
     permission_classes = [IsAuthenticated]
 
+    def get_permissions(self):
+        """Return different permissions based on request method."""
+        if self.request.method == 'GET':
+            return [AllowAny()]  # Allow public read access to devices
+        return [IsAuthenticated()]
+
 
 class DeviceDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Device.objects.all()
@@ -40,6 +46,8 @@ class SensorReadingListView(generics.ListCreateAPIView):
         """Return different permissions based on request method."""
         if self.request.method == 'POST':
             return [AllowAny()]
+        if self.request.method == 'GET':
+            return [AllowAny()]  # Allow public read access to sensor data
         return [IsAuthenticated()]
 
     def get_queryset(self):
