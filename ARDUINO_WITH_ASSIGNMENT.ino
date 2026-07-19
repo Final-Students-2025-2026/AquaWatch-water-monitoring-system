@@ -357,6 +357,12 @@ void loop() {
     String serverUrl = String(custom_server_url).replace("/api/readings/", "/api/readings/?device_id=" + assignedDeviceId);
     http.begin(serverUrl); 
     http.addHeader("Content-Type", "text/plain");
+    
+    // Debug output to verify URL
+    Serial.print("POST URL: ");
+    Serial.println(serverUrl);
+    Serial.print("Using device_id: ");
+    Serial.println(assignedDeviceId);
 
     String payload = "TEMP:" + String(waterTemp, 1) + 
                      ",TDS:" + String(tdsPPM, 0) + 

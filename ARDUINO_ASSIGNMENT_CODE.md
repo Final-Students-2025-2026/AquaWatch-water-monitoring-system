@@ -2,7 +2,7 @@
 
 Add these functions to your Arduino sketch to enable automatic device assignment from the dashboard.
 
-## Global Variables
+## Global Variables (add after custom_server_url)
 ```cpp
 String assignedDeviceId = "1";  // Default fallback device ID
 String arduinoMacAddress = "";
