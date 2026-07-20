@@ -22,7 +22,7 @@ String getArduinoMacAddress() {
 ```cpp
 void queryAssignedDevice() {
   String macAddress = getArduinoMacAddress();
-  String serverUrl = "https://aquawatch-p2mc.onrender.com/api/arduino/assignment/?mac_address=" + macAddress;
+  String serverUrl = "https://aquawatch-188s.onrender.com/api/arduino/assignment/?mac_address=" + macAddress;
   
   Serial.print("Querying assigned device for MAC: ");
   Serial.println(macAddress);

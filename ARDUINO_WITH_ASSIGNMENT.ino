@@ -10,7 +10,7 @@
 #include <DNSServer.h>
 #include <WiFiManager.h>   
 
-char custom_server_url[100] = "https://aquawatch-p2mc.onrender.com/api/readings/";
+char custom_server_url[100] = "https://aquawatch-188s.onrender.com/api/readings/";
 
 // Arduino Assignment Variables
 String assignedDeviceId = "1";  // Default fallback device ID
