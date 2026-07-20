@@ -32,17 +32,23 @@ class DeviceListCreateView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         """Automatically assign organization if not provided."""
-        # Get or create default organization
         from .models import Organization
-        org, _ = Organization.objects.get_or_create(
-            organization_name="Default Organization",
-            defaults={'description': 'Default organization for AquaWatch'}
-        )
-        # If organization not provided in request, use default
+        # Try to use user's organization if available
+        if hasattr(self.request.user, 'organization') and self.request.user.organization:
+            org = self.request.user.organization
+        else:
+            # Fallback to default organization
+            org, _ = Organization.objects.get_or_create(
+                organization_name="Default Organization",
+                defaults={'description': 'Default organization for AquaWatch'}
+            )
+        # If organization not provided in request, use user's or default
         if 'organization' not in self.request.data:
             serializer.save(organization=org, is_active=True)
         else:
             serializer.save(is_active=True)
+        
+        print(f"DEBUG: Created device with organization: {org.id}, is_active: True")
 
 
 class DeviceDetailView(generics.RetrieveUpdateDestroyAPIView):
