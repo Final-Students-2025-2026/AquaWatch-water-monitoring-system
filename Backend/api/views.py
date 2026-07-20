@@ -30,6 +30,20 @@ class DeviceListCreateView(generics.ListCreateAPIView):
             return [AllowAny()]  # Allow public read access to devices
         return [IsAuthenticated()]
 
+    def perform_create(self, serializer):
+        """Automatically assign organization if not provided."""
+        # Get or create default organization
+        from .models import Organization
+        org, _ = Organization.objects.get_or_create(
+            organization_name="Default Organization",
+            defaults={'description': 'Default organization for AquaWatch'}
+        )
+        # If organization not provided in request, use default
+        if 'organization' not in self.request.data:
+            serializer.save(organization=org)
+        else:
+            serializer.save()
+
 
 class DeviceDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Device.objects.all()

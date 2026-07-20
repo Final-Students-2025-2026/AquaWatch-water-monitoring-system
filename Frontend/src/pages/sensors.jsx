@@ -160,13 +160,19 @@ export default function Sensors() {
           device_name: trimmedName,
           device_type: "IoT Sensor",
           location: trimmedLocation,
-          arduino_mac_address: trimmedMac || null,
-          organization: 1 // Default organization ID
+          arduino_mac_address: trimmedMac || null
         })
       });
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || errorData.message || "Failed to create device");
+        const errorText = await response.text();
+        console.error("Server error response:", errorText);
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { detail: errorText };
+        }
+        throw new Error(errorData.detail || errorData.message || errorText || "Failed to create device");
       }
       await loadSensors();
       setDialogOpen(false);
