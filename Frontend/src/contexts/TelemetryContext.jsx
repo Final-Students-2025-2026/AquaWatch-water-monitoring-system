@@ -188,7 +188,7 @@ function generateMockTelemetry() {
 const TELEMETRY_MODE = import.meta.env.VITE_TELEMETRY_MODE || "HTTP";
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
 const WS_URL = import.meta.env.VITE_WS_URL || "ws://127.0.0.1:8000/ws/telemetry";
-const POLL_INTERVAL_MS = 2000;
+const POLL_INTERVAL_MS = 1000;
 
 // Real API/WebSocket connector - isolated for easy swap
 async function fetchTelemetryData() {

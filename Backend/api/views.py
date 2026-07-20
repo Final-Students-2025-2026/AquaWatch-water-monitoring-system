@@ -152,15 +152,39 @@ def get_latest_reading(request):
         )
     
     try:
+        # Try to find device by device_code first (ARDUINO_{device_id})
+        device_code = f"ARDUINO_{device_id}"
+        device = Device.objects.filter(device_code=device_code).first()
+        
+        # If not found by code, try by id
+        if not device:
+            device = Device.objects.filter(id=device_id).first()
+        
+        if not device:
+            # Return default values when device not found
+            return Response({
+                'reading_id': None,
+                'device_id': int(device_id),
+                'reading_timestamp': None,
+                'ph_value': 0.0,
+                'turbidity_value': 0.0,
+                'tds_value': 0.0,
+                'temperature_celsius': 0.0,
+                'ec_value': 0.0,
+                'is_alert': False,
+                'alert_reason': None,
+                'message': f'Device {device_id} not found'
+            }, status=status.HTTP_200_OK)
+        
         # Debug: Check all readings for this device
-        all_readings = SensorReading.objects.filter(device_id=device_id)
-        print(f"DEBUG: Total readings for device {device_id}: {all_readings.count()}")
+        all_readings = SensorReading.objects.filter(device=device)
+        print(f"DEBUG: Total readings for device {device_id} (actual device ID: {device.id}): {all_readings.count()}")
         if all_readings.exists():
             latest = all_readings.order_by('-reading_timestamp').first()
             print(f"DEBUG: Latest reading ID: {latest.id}, timestamp: {latest.reading_timestamp}")
             print(f"DEBUG: Last 3 readings: {list(all_readings.order_by('-reading_timestamp')[:3].values('id', 'reading_timestamp', 'tds_value'))}")
         
-        reading = SensorReading.objects.filter(device_id=device_id).order_by('-reading_timestamp').first()
+        reading = SensorReading.objects.filter(device=device).order_by('-reading_timestamp').first()
         if not reading:
             # Return default values when no readings exist
             return Response({

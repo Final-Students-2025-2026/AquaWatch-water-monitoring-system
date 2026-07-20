@@ -48,17 +48,15 @@ export default function Overview() {
           headers["Authorization"] = `Bearer ${token}`;
         }
         
-        // Load devices (sensors)
-        const devicesResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/devices`, {
-          headers
-        });
+        // Load devices and alerts in parallel
+        const [devicesResponse, alertsResponse] = await Promise.all([
+          fetch(`${import.meta.env.VITE_BACKEND_URL}/api/devices`, { headers }),
+          fetch(`${import.meta.env.VITE_BACKEND_URL}/api/alerts`, { headers })
+        ]);
+        
         const devicesData = devicesResponse.ok ? await devicesResponse.json() : [];
         const safeDevicesData = Array.isArray(devicesData) ? devicesData : [];
         
-        // Load alerts for summary
-        const alertsResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/alerts`, {
-          headers
-        });
         const alertsData = alertsResponse.ok ? await alertsResponse.json() : [];
         const safeAlertsData = Array.isArray(alertsData) ? alertsData : [];
         

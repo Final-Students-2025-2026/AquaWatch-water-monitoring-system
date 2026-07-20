@@ -101,30 +101,26 @@ export default function Sensors() {
       
       setSensors(transformedDevices);
       
-      // Load latest readings for each device
-      const readingsPromises = transformedDevices.map(async (device) => {
-        try {
-          const readingResponse = await fetch(
-            `${import.meta.env.VITE_BACKEND_URL}/api/readings/latest/?device_id=${device.id}`,
-            {
-              headers: {
-                "Authorization": `Bearer ${token}`
-              }
+      // Load latest readings for each device in parallel
+      const readingsPromises = transformedDevices.map((device) =>
+        fetch(
+          `${import.meta.env.VITE_BACKEND_URL}/api/readings/latest/?device_id=${device.id}`,
+          {
+            headers: {
+              "Authorization": `Bearer ${token}`
             }
-          );
-          if (readingResponse.status === 404) {
-            // No readings for this device, return null
-            return null;
           }
+        )
+        .then(async (readingResponse) => {
+          if (readingResponse.status === 404) return null;
           if (readingResponse.ok) {
             const reading = await readingResponse.json();
             return { device_id: device.id, ...reading };
           }
           return null;
-        } catch (error) {
-          return null;
-        }
-      });
+        })
+        .catch(() => null)
+      );
       
       const readings = await Promise.all(readingsPromises);
       const validReadings = readings.filter(r => r !== null);
@@ -162,16 +158,22 @@ export default function Sensors() {
         body: JSON.stringify({
           device_code: `DEVICE_${Date.now()}`,
           device_name: trimmedName,
+          device_type: "IoT Sensor",
           location: trimmedLocation,
-          arduino_mac_address: trimmedMac || null
+          arduino_mac_address: trimmedMac || null,
+          organization: 1 // Default organization ID
         })
       });
-      if (!response.ok) throw new Error("Failed to create device");
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || errorData.message || "Failed to create device");
+      }
       await loadSensors();
       setDialogOpen(false);
       setName("");
       setLocation("");
       setMacAddress("");
+      success("Sensor added successfully");
     } catch (error) {
       console.error("Failed to create sensor:", error);
       alert(`Failed to create sensor: ${error?.message || "Unknown error"}`);
