@@ -40,9 +40,9 @@ class DeviceListCreateView(generics.ListCreateAPIView):
         )
         # If organization not provided in request, use default
         if 'organization' not in self.request.data:
-            serializer.save(organization=org)
+            serializer.save(organization=org, is_active=True)
         else:
-            serializer.save()
+            serializer.save(is_active=True)
 
 
 class DeviceDetailView(generics.RetrieveUpdateDestroyAPIView):

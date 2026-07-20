@@ -87,7 +87,7 @@ export default function Sensors() {
       
       // Transform backend data to match frontend expectations
       const transformedDevices = devices.map(device => ({
-        id: device.device_id,
+        id: device.device_id || device.id, // Handle both field names
         name: device.device_name || device.device_code,
         location: device.location || "Unknown",
         online: device.is_active,
