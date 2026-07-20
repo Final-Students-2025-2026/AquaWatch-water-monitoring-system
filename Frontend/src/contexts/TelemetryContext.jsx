@@ -193,8 +193,8 @@ const POLL_INTERVAL_MS = 2000;
 // Real API/WebSocket connector - isolated for easy swap
 async function fetchTelemetryData() {
   if (TELEMETRY_MODE === "HTTP") {
-    // Real backend HTTP call - fetch from device_id=3 (Arduino assigned device)
-    const response = await fetch(`${BACKEND_URL}/api/readings/latest/?device_id=3`);
+    // Real backend HTTP call - fetch from device_id=1 (Arduino device)
+    const response = await fetch(`${BACKEND_URL}/api/readings/latest/?device_id=1`);
     if (!response.ok) {
       throw new Error(`HTTP error ${response.status}`);
     }
