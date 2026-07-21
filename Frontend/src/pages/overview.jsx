@@ -69,11 +69,20 @@ export default function Overview() {
         const alertsData = alertsResponse.ok ? await alertsResponse.json() : [];
         const safeAlertsData = Array.isArray(alertsData) ? alertsData : [];
         
+        // Transform backend data to match frontend expectations
+        const transformedSensors = safeDevicesData.map(device => ({
+          id: device.device_id || device.id,
+          name: device.device_name || device.device_code,
+          location: device.location || "Unknown",
+          online: device.is_active,
+          status: device.is_active ? "normal" : "offline",
+        }));
+        
         // Calculate summary
         const summaryData = {
-          totalSensors: safeDevicesData.length,
-          onlineSensors: safeDevicesData.filter(d => d.is_active).length,
-          offlineSensors: safeDevicesData.filter(d => !d.is_active).length,
+          totalSensors: transformedSensors.length,
+          onlineSensors: transformedSensors.filter(d => d.online).length,
+          offlineSensors: transformedSensors.filter(d => !d.online).length,
           criticalAlerts: safeAlertsData.filter(a => a.status === "active" && a.severity === "critical").length,
           warningAlerts: safeAlertsData.filter(a => a.status === "active" && (a.severity === "medium" || a.severity === "warning")).length,
           overallStatus: safeAlertsData.some(a => a.status === "active" && a.severity === "critical") ? "critical" : 
@@ -81,7 +90,7 @@ export default function Overview() {
         };
         
         setSummary(summaryData);
-        setSensors(safeDevicesData);
+        setSensors(transformedSensors);
         
         // Generate trend data from telemetry history
         const trendsData = history.map(h => ({
