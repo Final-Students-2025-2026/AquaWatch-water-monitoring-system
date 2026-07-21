@@ -14,6 +14,14 @@ class DeviceSerializer(serializers.ModelSerializer):
     arduino_mac_address = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     organization = serializers.PrimaryKeyRelatedField(required=False, allow_null=True, queryset=Organization.objects.all())
     
+    def validate_arduino_mac_address(self, value):
+        """Allow None and empty strings, but validate uniqueness only if provided."""
+        if value:
+            existing = Device.objects.filter(arduino_mac_address=value).first()
+            if existing and (not self.instance or existing.id != self.instance.id):
+                raise serializers.ValidationError("A device with this MAC address already exists.")
+        return value
+    
     class Meta:
         model = Device
         fields = ['device_id', 'organization', 'organization_name', 'device_name', 'device_code', 

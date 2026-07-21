@@ -33,12 +33,15 @@ class DeviceListCreateView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         """Automatically assign organization if not provided."""
         from .models import Organization
+        print(f"DEBUG: perform_create called with data: {self.request.data}")
         # Try to use user's organization if available
         org = None
         if hasattr(self.request.user, 'organization_id') and self.request.user.organization_id:
             try:
                 org = Organization.objects.get(organization_id=self.request.user.organization_id)
+                print(f"DEBUG: Found user organization: {org.id}")
             except Organization.DoesNotExist:
+                print(f"DEBUG: User organization not found")
                 pass
         
         # Fallback to default organization if user org not found or not available
@@ -47,13 +50,14 @@ class DeviceListCreateView(generics.ListCreateAPIView):
                 organization_name="Default Organization",
                 defaults={'description': 'Default organization for AquaWatch'}
             )
+            print(f"DEBUG: Using default organization: {org.id}")
         # If organization not provided in request, use user's or default
         if 'organization' not in self.request.data:
-            serializer.save(organization=org, is_active=True)
+            device = serializer.save(organization=org, is_active=True)
         else:
-            serializer.save(is_active=True)
+            device = serializer.save(is_active=True)
         
-        print(f"DEBUG: Created device with organization: {org.id}, is_active: True")
+        print(f"DEBUG: Created device with ID: {device.id}, organization: {org.id}, is_active: {device.is_active}")
 
 
 class DeviceDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -63,9 +67,12 @@ class DeviceDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def destroy(self, request, *args, **kwargs):
         """Soft delete by setting is_active=False instead of hard delete."""
+        print(f"DEBUG: destroy called for device pk: {kwargs.get('pk')}")
         device = self.get_object()
+        print(f"DEBUG: Found device with ID: {device.id}, current is_active: {device.is_active}")
         device.is_active = False
         device.save()
+        print(f"DEBUG: Updated device is_active to False")
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
