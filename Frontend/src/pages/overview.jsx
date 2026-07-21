@@ -64,7 +64,10 @@ export default function Overview() {
         clearTimeout(alertsTimeout);
         
         const devicesData = devicesResponse.ok ? await devicesResponse.json() : [];
-        const safeDevicesData = Array.isArray(devicesData) ? devicesData : [];
+        // Handle both array responses and paginated responses
+        const safeDevicesData = Array.isArray(devicesData) 
+          ? devicesData 
+          : (devicesData?.results || devicesData?.devices || devicesData?.data || []);
         
         const alertsData = alertsResponse.ok ? await alertsResponse.json() : [];
         const safeAlertsData = Array.isArray(alertsData) ? alertsData : [];
