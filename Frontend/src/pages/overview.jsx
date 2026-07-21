@@ -70,7 +70,10 @@ export default function Overview() {
           : (devicesData?.results || devicesData?.devices || devicesData?.data || []);
         
         const alertsData = alertsResponse.ok ? await alertsResponse.json() : [];
-        const safeAlertsData = Array.isArray(alertsData) ? alertsData : [];
+        // Handle both array responses and paginated responses
+        const safeAlertsData = Array.isArray(alertsData) 
+          ? alertsData 
+          : (alertsData?.results || alertsData?.alerts || alertsData?.data || []);
         
         // Transform backend data to match frontend expectations
         const transformedSensors = safeDevicesData.map(device => ({
