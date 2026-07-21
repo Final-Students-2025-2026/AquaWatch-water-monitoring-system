@@ -82,11 +82,11 @@ export default function Sensors() {
     loadSensors();
   }, []);
 
-  // Poll readings every 2 seconds for live updates
+  // Poll readings every 5 seconds for live updates
   useEffect(() => {
     const interval = setInterval(() => {
       loadReadings();
-    }, 2000);
+    }, 5000);
     return () => clearInterval(interval);
   }, []);
 
