@@ -105,8 +105,6 @@ export default function Sensors() {
         arduino_mac_address: device.arduino_mac_address || null
       }));
       
-      console.log("DEBUG: Transformed devices:", transformedDevices);
-      
       setSensors(transformedDevices);
       
       // Load latest readings for each device in parallel
@@ -114,26 +112,29 @@ export default function Sensors() {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout for readings
         
-        return fetch(
-          `${import.meta.env.VITE_BACKEND_URL}/api/readings/latest/?device_id=${device.id}`,
-          {
-            headers: {
-              "Authorization": `Bearer ${token}`
-            },
-            signal: controller.signal
-          }
-        )
+        const url = `${import.meta.env.VITE_BACKEND_URL}/api/readings/latest/?device_id=${device.id}`;
+        console.log("DEBUG: Fetching reading for device", device.id, "from URL:", url);
+        
+        return fetch(url, {
+          headers: {
+            "Authorization": `Bearer ${token}`
+          },
+          signal: controller.signal
+        })
         .then(async (readingResponse) => {
           clearTimeout(timeoutId);
+          console.log("DEBUG: Reading response for device", device.id, "status:", readingResponse.status);
           if (readingResponse.status === 404) return null;
           if (readingResponse.ok) {
             const reading = await readingResponse.json();
+            console.log("DEBUG: Reading data for device", device.id, ":", reading);
             return { device_id: device.id, ...reading };
           }
           return null;
         })
-        .catch(() => {
+        .catch((error) => {
           clearTimeout(timeoutId);
+          console.log("DEBUG: Error fetching reading for device", device.id, ":", error);
           return null;
         });
       });
