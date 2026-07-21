@@ -12,6 +12,7 @@ class DeviceSerializer(serializers.ModelSerializer):
     organization_name = serializers.CharField(source='organization.organization_name', read_only=True)
     device_id = serializers.IntegerField(source='id', read_only=True)
     arduino_mac_address = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    organization = serializers.PrimaryKeyRelatedField(required=False, allow_null=True, queryset=Organization.objects.all())
     
     class Meta:
         model = Device
