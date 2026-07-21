@@ -20,7 +20,7 @@ from .serializers import (
 
 # Device Views
 class DeviceListCreateView(generics.ListCreateAPIView):
-    queryset = Device.objects.filter(is_active=True)
+    queryset = Device.objects.all()
     serializer_class = DeviceSerializer
     permission_classes = [IsAuthenticated]
 
@@ -34,10 +34,15 @@ class DeviceListCreateView(generics.ListCreateAPIView):
         """Automatically assign organization if not provided."""
         from .models import Organization
         # Try to use user's organization if available
-        if hasattr(self.request.user, 'organization') and self.request.user.organization:
-            org = self.request.user.organization
-        else:
-            # Fallback to default organization
+        org = None
+        if hasattr(self.request.user, 'organization_id') and self.request.user.organization_id:
+            try:
+                org = Organization.objects.get(organization_id=self.request.user.organization_id)
+            except Organization.DoesNotExist:
+                pass
+        
+        # Fallback to default organization if user org not found or not available
+        if not org:
             org, _ = Organization.objects.get_or_create(
                 organization_name="Default Organization",
                 defaults={'description': 'Default organization for AquaWatch'}
