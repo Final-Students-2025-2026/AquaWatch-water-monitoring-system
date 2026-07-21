@@ -116,9 +116,9 @@ class SensorReadingListView(generics.ListCreateAPIView):
             
             print(f"DEBUG POST: Parsed data: {data_dict}")
             
-            # Get or create device (default to device_id=1 for Arduino)
-            device_id = request.query_params.get('device_id', 1)
-            print(f"DEBUG POST: device_id from query: {device_id}")
+            # Get or create device - try MAC address first, then device_id for backward compatibility
+            mac_address = request.query_params.get('mac_address')
+            device_id = request.query_params.get('device_id')
             
             # Get or create organization first
             org, _ = Organization.objects.get_or_create(
@@ -129,27 +129,52 @@ class SensorReadingListView(generics.ListCreateAPIView):
                 }
             )
             
-            # Get device using numeric device_id directly
-            try:
-                device = Device.objects.get(id=device_id)
-                # Ensure device is active when Arduino posts to it
-                if not device.is_active:
-                    device.is_active = True
-                    device.save()
-                print(f"DEBUG POST: Found device ID: {device.id}")
-            except Device.DoesNotExist:
-                # Fallback to device_code if numeric ID not found
-                device_code = f"ARDUINO_{device_id}"
-                device, created = Device.objects.get_or_create(
-                    device_code=device_code,
-                    defaults={
-                        'device_name': f"Arduino Device {device_id}",
-                        'device_type': "IoT Sensor",
-                        'organization': org,
-                        'is_active': True  # Ensure new devices are active
-                    }
+            device = None
+            
+            # Try to find device by MAC address first
+            if mac_address:
+                try:
+                    device = Device.objects.get(arduino_mac_address=mac_address)
+                    print(f"DEBUG POST: Found device by MAC address: {device.id}")
+                    # Ensure device is active when Arduino posts to it
+                    if not device.is_active:
+                        device.is_active = True
+                        device.save()
+                except Device.DoesNotExist:
+                    print(f"DEBUG POST: No device found with MAC address: {mac_address}")
+                    return Response(
+                        {'status': 'error', 'message': f'No device found with MAC address: {mac_address}'},
+                        status=status.HTTP_404_NOT_FOUND
+                    )
+            
+            # Fallback to device_id for backward compatibility
+            elif device_id:
+                print(f"DEBUG POST: device_id from query: {device_id}")
+                try:
+                    device = Device.objects.get(id=device_id)
+                    # Ensure device is active when Arduino posts to it
+                    if not device.is_active:
+                        device.is_active = True
+                        device.save()
+                    print(f"DEBUG POST: Found device ID: {device.id}")
+                except Device.DoesNotExist:
+                    # Fallback to device_code if numeric ID not found
+                    device_code = f"ARDUINO_{device_id}"
+                    device, created = Device.objects.get_or_create(
+                        device_code=device_code,
+                        defaults={
+                            'device_name': f"Arduino Device {device_id}",
+                            'device_type': "IoT Sensor",
+                            'organization': org,
+                            'is_active': True  # Ensure new devices are active
+                        }
+                    )
+                    print(f"DEBUG POST: Created device from code, ID: {device.id}")
+            else:
+                return Response(
+                    {'status': 'error', 'message': 'Either mac_address or device_id parameter is required'},
+                    status=status.HTTP_400_BAD_REQUEST
                 )
-                print(f"DEBUG POST: Created device from code, ID: {device.id}")
             
             # Map Arduino fields to model fields
             reading = SensorReading.objects.create(
