@@ -20,7 +20,7 @@ from .serializers import (
 
 # Device Views
 class DeviceListCreateView(generics.ListCreateAPIView):
-    queryset = Device.objects.all()
+    queryset = Device.objects.filter(is_active=True)
     serializer_class = DeviceSerializer
     permission_classes = [IsAuthenticated]
 
