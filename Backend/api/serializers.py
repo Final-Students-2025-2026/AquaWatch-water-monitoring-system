@@ -16,7 +16,7 @@ class DeviceSerializer(serializers.ModelSerializer):
     
     def validate_arduino_mac_address(self, value):
         """Allow None and empty strings, but validate uniqueness only if provided."""
-        if value:
+        if value and value.strip():
             existing = Device.objects.filter(arduino_mac_address=value).first()
             if existing and (not self.instance or existing.id != self.instance.id):
                 raise serializers.ValidationError("A device with this MAC address already exists.")
