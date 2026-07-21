@@ -67,13 +67,14 @@ export default function Historical() {
         const hours = period === "today" ? 24 : period === "week" ? 168 : 720;
         
         // Get devices to get device_id
-        const devicesResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/devices`, {
+        const devicesResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/devices/`, {
           headers: {
             "Authorization": `Bearer ${token}`
           }
         });
         const devicesData = devicesResponse.ok ? await devicesResponse.json() : [];
-        const devices = Array.isArray(devicesData) ? devicesData : [];
+        // Handle both array responses and paginated responses
+        const devices = Array.isArray(devicesData) ? devicesData : (devicesData?.results || devicesData?.devices || devicesData?.data || []);
         
         if (devices.length === 0 || !devices[0]?.device_id) {
           setTrends([]);
