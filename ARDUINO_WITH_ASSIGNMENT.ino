@@ -17,7 +17,7 @@ String assignedDeviceId = "1";  // Default fallback device ID
 String arduinoMacAddress = "";
 
 // ============================================
-// PIN DEFINITIONS - UPDATED TO MATCH YOUR WIRING
+// PIN DEFINITIONS 
 // ============================================
 #define WATER_TEMP_PIN  23    // DS18B20 on GPIO 23 
 #define PH_PIN          33    // pH sensor on GPIO 33 
@@ -32,9 +32,11 @@ DallasTemperature sensorsLiquid(&oneWireLiquid);
 #define SCREEN_HEIGHT 64    
 Adafruit_SH1106G display = Adafruit_SH1106G(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 
-// pH Calibration Values (from your lab technician)
-float calibph7 = 1.27; 
-float calibph4 = 1.65; 
+// ============================================
+// pH CALIBRATION VALUES - FROM ES LAB 
+// ============================================
+float calibph7 = 2.800;   // Voltage reading in pH 7.0 buffer
+float calibph4 = 3.300;   // Voltage reading in pH 4.0 buffer
 float m, b;               
 
 // ============================================
@@ -94,7 +96,13 @@ void displayMacAddressOnOLED() {
 
 void queryAssignedDevice() {
   String macAddress = getArduinoMacAddress();
-  String serverUrl = String(custom_server_url).replace("/api/readings/", "/api/arduino/assignment/?mac_address=") + macAddress;
+  
+  // ============================================
+  // Build URL 
+  // ============================================
+  String serverUrl = String(custom_server_url);
+  serverUrl.replace("/api/readings/", "/api/arduino/assignment/?mac_address=");
+  serverUrl += macAddress;
   
   Serial.println("\n=================================");
   Serial.println("QUERYING ASSIGNED DEVICE");
@@ -176,7 +184,7 @@ void setup() {
   analogReadResolution(12); 
   analogSetAttenuation(ADC_11db); 
 
-  // pH calibration
+  // pH calibration using the two-point method (pH 4.0 and pH 7.0)
   m = (4.01 - 7.00) / (calibph4 - calibph7);
   b = 7.00 - m * calibph7;
 
@@ -218,17 +226,168 @@ void setup() {
 
   wm.setCustomHeadElement(
     "<style>"
-    "body { background-color: #111827; color: #f3f4f6; font-family: sans-serif; }"
-    "h1 { color: #3b82f6; text-align: center; font-size: 24px; }"
-    "div { background-color: #1f2937; padding: 15px; border-radius: 8px; }"
-    "button { background-color: #2563eb; color: white; border: none; border-radius: 4px; padding: 10px; }"
-    "button:hover { background-color: #1d4ed8; }"
-    "input { background-color: #374151; color: white; border: 1px solid #4b5563; border-radius: 4px; padding: 8px; }"
+    "* { margin: 0; padding: 0; box-sizing: border-box; }"
+    "body { "
+    "  background: #f5f5f5; "
+    "  min-height: 100vh; "
+    "  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; "
+    "  color: #1a1a1a; "
+    "  display: flex; "
+    "  align-items: flex-start; "
+    "  justify-content: center; "
+    "  padding: 20px; "
+    "} "
+    ".container { "
+    "  background: white; "
+    "  border-radius: 20px; "
+    "  padding: 20px; "
+    "  max-width: 420px; "
+    "  width: 100%; "
+    "  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); "
+    "} "
+    ".header { "
+    "  display: flex; "
+    "  justify-content: space-between; "
+    "  align-items: center; "
+    "  padding-bottom: 16px; "
+    "  border-bottom: 1px solid #f0f0f0; "
+    "  margin-bottom: 16px; "
+    "} "
+    ".header h1 { "
+    "  color: #1a1a1a; "
+    "  font-size: 20px; "
+    "  font-weight: 600; "
+    "  margin: 0; "
+    "} "
+    ".header .close { "
+    "  color: #999; "
+    "  font-size: 24px; "
+    "  cursor: pointer; "
+    "} "
+    ".wifi-list { "
+    "  display: flex; "
+    "  flex-direction: column; "
+    "  gap: 2px; "
+    "} "
+    ".wifi-item { "
+    "  display: flex; "
+    "  justify-content: space-between; "
+    "  align-items: center; "
+    "  padding: 14px 12px; "
+    "  border-radius: 12px; "
+    "  transition: background 0.15s; "
+    "  cursor: pointer; "
+    "} "
+    ".wifi-item:hover { "
+    "  background: #f8f8f8; "
+    "} "
+    ".wifi-item .name { "
+    "  font-size: 15px; "
+    "  font-weight: 500; "
+    "  color: #1a1a1a; "
+    "} "
+    ".wifi-item .signal { "
+    "  display: flex; "
+    "  align-items: center; "
+    "  gap: 8px; "
+    "  color: #999; "
+    "  font-size: 12px; "
+    "} "
+    ".wifi-item .signal .bars { "
+    "  display: flex; "
+    "  align-items: flex-end; "
+    "  gap: 2px; "
+    "  height: 16px; "
+    "} "
+    ".wifi-item .signal .bars span { "
+    "  display: block; "
+    "  width: 3px; "
+    "  background: #d0d0d0; "
+    "  border-radius: 2px; "
+    "} "
+    ".wifi-item .signal .bars span.active { "
+    "  background: #34c759; "
+    "} "
+    ".wifi-item .connect-btn { "
+    "  background: #007aff; "
+    "  color: white; "
+    "  border: none; "
+    "  border-radius: 20px; "
+    "  padding: 4px 16px; "
+    "  font-size: 13px; "
+    "  font-weight: 500; "
+    "  cursor: pointer; "
+    "  transition: background 0.15s; "
+    "} "
+    ".wifi-item .connect-btn:hover { "
+    "  background: #0055cc; "
+    "} "
+    ".wifi-item .connect-btn.connected { "
+    "  background: #34c759; "
+    "} "
+    ".wifi-item .lock { "
+    "  color: #999; "
+    "  font-size: 14px; "
+    "  margin-right: 6px; "
+    "} "
+    ".note { "
+    "  margin-top: 16px; "
+    "  padding: 12px; "
+    "  background: #f8f8f8; "
+    "  border-radius: 12px; "
+    "  color: #888; "
+    "  font-size: 12px; "
+    "  text-align: center; "
+    "} "
+    ".note strong { "
+    "  color: #1a1a1a; "
+    "  font-weight: 500; "
+    "} "
+    ".form-group { "
+    "  margin-top: 12px; "
+    "  padding-top: 12px; "
+    "  border-top: 1px solid #f0f0f0; "
+    "} "
+    ".form-group label { "
+    "  color: #666; "
+    "  font-size: 12px; "
+    "  margin-bottom: 4px; "
+    "  display: block; "
+    "} "
+    ".form-group input { "
+    "  width: 100%; "
+    "  background: #f5f5f5; "
+    "  border: 1px solid #e0e0e0; "
+    "  border-radius: 8px; "
+    "  padding: 10px 12px; "
+    "  font-size: 14px; "
+    "  outline: none; "
+    "} "
+    ".form-group input:focus { "
+    "  border-color: #007aff; "
+    "  background: white; "
+    "} "
+    ".save-btn { "
+    "  width: 100%; "
+    "  background: #007aff; "
+    "  color: white; "
+    "  border: none; "
+    "  border-radius: 12px; "
+    "  padding: 14px; "
+    "  font-size: 16px; "
+    "  font-weight: 500; "
+    "  cursor: pointer; "
+    "  margin-top: 16px; "
+    "} "
+    ".save-btn:hover { "
+    "  background: #0055cc; "
+    "} "
     "</style>"
   );
   
-  wm.setTitle("AquaWatch IoT Portal");
+  wm.setTitle("WiFi Hotspot");
 
+  // Add a custom parameter for the server URL
   WiFiManagerParameter custom_url_setting("server", "Backend API Server URL", custom_server_url, 100);
   wm.addParameter(&custom_url_setting);
 
@@ -268,7 +427,7 @@ void setup() {
   delay(2500);
 
   // ============================================
-  // ARDUINO ASSIGNMENT - NEW CODE
+  // ARDUINO ASSIGNMENT
   // ============================================
   // Display MAC address for 5 seconds
   displayMacAddressOnOLED();
@@ -337,32 +496,56 @@ void loop() {
   if(phValue > 14.0) phValue = 14.0;
   float orpVal = 400.0 - (phValue * 25.0) + (waterTemp * 0.5);
 
-  // WATER QUALITY TIER
-  int waterTier = 0; 
-  if (phValue > 7.20 || phValue < 6.00) {
-    waterTier = 2; 
-  } else if (phValue >= 6.00 && phValue < 6.50) {
-    waterTier = 1; 
+  // ============================================
+  // WATER QUALITY TIER - BASED ON WHO GUIDELINES
+  // ============================================
+  int waterTier = 0;
+  String alertReason = "";
+  
+  // Check each parameter against WHO guidelines
+  if (phValue < 6.5 || phValue > 8.5) {
+    waterTier = 2;
+    alertReason = "pH out of range (6.5-8.5)";
+  } else if (waterTemp > 25.0) {
+    waterTier = 1;
+    alertReason = "Temperature > 25°C";
+  } else if (turbidityNTU >= 5.0) {
+    waterTier = 1;
+    alertReason = "Turbidity ≥ 5 NTU";
+  } else if (tdsPPM >= 1000) {
+    waterTier = 1;
+    alertReason = "TDS ≥ 1000 mg/L";
+  } else if (ecVal < 50 || ecVal > 500) {
+    waterTier = 1;
+    alertReason = "EC out of range (50-500 µS/cm)";
   } else {
-    waterTier = 0; 
+    waterTier = 0;
+    alertReason = "All parameters within WHO guidelines";
   }
 
   bool isConnected = (WiFi.status() == WL_CONNECTED);
 
-  // 5. SEND DATA TO SERVER - MODIFIED TO USE ASSIGNED DEVICE ID
+  // ============================================
+  // 5. SEND DATA TO SERVER - USING MAC ADDRESS
+  // ============================================
   if (isConnected) {
     HTTPClient http;
     
-    // Use assigned device ID from startup query
-    String serverUrl = String(custom_server_url).replace("/api/readings/", "/api/readings/?device_id=" + assignedDeviceId);
+    // Use MAC address instead of device_id
+    String macAddress = getArduinoMacAddress();
+    // URL-encode the MAC address by replacing : with %3A
+    macAddress.replace(":", "%3A");
+    String serverUrl = String(custom_server_url);
+    serverUrl.replace("/api/readings/", "/api/readings/?mac_address=");
+    serverUrl += macAddress;
+    
     http.begin(serverUrl); 
     http.addHeader("Content-Type", "text/plain");
     
-    // Debug output to verify URL
     Serial.print("POST URL: ");
     Serial.println(serverUrl);
-    Serial.print("Using device_id: ");
-    Serial.println(assignedDeviceId);
+    Serial.print("Using mac_address: ");
+    Serial.println(macAddress);
 
     String payload = "TEMP:" + String(waterTemp, 1) + 
                      ",TDS:" + String(tdsPPM, 0) + 
@@ -370,13 +553,13 @@ void loop() {
                      ",NTU:" + String(turbidityNTU, 1) + 
                      ",PH:" + String(phValue, 2) + 
                      ",ORP:" + String(orpVal, 0) + 
-                     ",TIER:" + String(waterTier);
+                     ",TIER:" + String(waterTier) +
+                     ",ALERT:" + alertReason;
 
     int httpResponseCode = http.POST(payload);
     Serial.print("Stream Post Status Code: ");
     Serial.println(httpResponseCode);
     
-    // If we get 400 errors, fallback to default device_id=1
     if (httpResponseCode == 400) {
       Serial.println("Assignment failed, using default device_id=1");
       assignedDeviceId = "1";
@@ -392,7 +575,8 @@ void loop() {
   Serial.print(",NTU:"); Serial.print(turbidityNTU, 1);
   Serial.print(",PH:"); Serial.print(phValue, 2);
   Serial.print(",ORP:"); Serial.print(orpVal, 0);
-  Serial.print(",TIER:"); Serial.println(waterTier);
+  Serial.print(",TIER:"); Serial.print(waterTier);
+  Serial.print(",ALERT:"); Serial.println(alertReason);
 
   // 7. OLED DISPLAY
   display.clearDisplay();
