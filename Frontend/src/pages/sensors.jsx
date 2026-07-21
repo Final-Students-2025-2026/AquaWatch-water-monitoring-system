@@ -72,11 +72,17 @@ export default function Sensors() {
     setIsLoading(true);
     try {
       const token = localStorage.getItem("token");
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      
       const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/devices`, {
         headers: {
           "Authorization": `Bearer ${token}`
-        }
+        },
+        signal: controller.signal
       });
+      clearTimeout(timeoutId);
+      
       if (!response.ok) throw new Error("Failed to load devices");
       const responseData = await response.json();
       
@@ -102,16 +108,21 @@ export default function Sensors() {
       setSensors(transformedDevices);
       
       // Load latest readings for each device in parallel
-      const readingsPromises = transformedDevices.map((device) =>
-        fetch(
+      const readingsPromises = transformedDevices.map((device) => {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout for readings
+        
+        return fetch(
           `${import.meta.env.VITE_BACKEND_URL}/api/readings/latest/?device_id=${device.id}`,
           {
             headers: {
               "Authorization": `Bearer ${token}`
-            }
+            },
+            signal: controller.signal
           }
         )
         .then(async (readingResponse) => {
+          clearTimeout(timeoutId);
           if (readingResponse.status === 404) return null;
           if (readingResponse.ok) {
             const reading = await readingResponse.json();
@@ -119,8 +130,11 @@ export default function Sensors() {
           }
           return null;
         })
-        .catch(() => null)
-      );
+        .catch(() => {
+          clearTimeout(timeoutId);
+          return null;
+        });
+      });
       
       const readings = await Promise.all(readingsPromises);
       const validReadings = readings.filter(r => r !== null);
@@ -149,6 +163,9 @@ export default function Sensors() {
     setIsCreating(true);
     try {
       const token = localStorage.getItem("token");
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      
       const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/devices`, {
         method: "POST",
         headers: {
@@ -161,8 +178,11 @@ export default function Sensors() {
           device_type: "IoT Sensor",
           location: trimmedLocation,
           arduino_mac_address: trimmedMac || null
-        })
+        }),
+        signal: controller.signal
       });
+      clearTimeout(timeoutId);
+      
       if (!response.ok) {
         const errorText = await response.text();
         console.error("Server error response:", errorText);
@@ -182,7 +202,11 @@ export default function Sensors() {
       success("Sensor added successfully");
     } catch (error) {
       console.error("Failed to create sensor:", error);
-      alert(`Failed to create sensor: ${error?.message || "Unknown error"}`);
+      if (error.name === 'AbortError') {
+        alert("Request timed out. Please check your connection and try again.");
+      } else {
+        alert(`Failed to create sensor: ${error?.message || "Unknown error"}`);
+      }
     } finally {
       setIsCreating(false);
     }
@@ -236,18 +260,28 @@ export default function Sensors() {
     setIsDeleting(true);
     try {
       const token = localStorage.getItem("token");
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      
       const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/devices/${pendingDeleteId}`, {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${token}`
-        }
+        },
+        signal: controller.signal
       });
+      clearTimeout(timeoutId);
+      
       if (!response.ok) throw new Error("Failed to delete device");
       await loadSensors();
       success("Sensor deleted successfully");
     } catch (err) {
       console.error("Failed to delete sensor:", err);
-      alert(`Failed to delete sensor: ${err?.message || "Unknown error"}`);
+      if (err.name === 'AbortError') {
+        alert("Request timed out. Please check your connection and try again.");
+      } else {
+        alert(`Failed to delete sensor: ${err?.message || "Unknown error"}`);
+      }
     } finally {
       setIsDeleting(false);
       setPendingDeleteId(null);

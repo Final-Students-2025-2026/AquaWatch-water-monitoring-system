@@ -48,11 +48,20 @@ export default function Overview() {
           headers["Authorization"] = `Bearer ${token}`;
         }
         
-        // Load devices and alerts in parallel
+        // Create abort controllers for timeout handling
+        const devicesController = new AbortController();
+        const alertsController = new AbortController();
+        const devicesTimeout = setTimeout(() => devicesController.abort(), 30000); // 30 second timeout
+        const alertsTimeout = setTimeout(() => alertsController.abort(), 30000); // 30 second timeout
+        
+        // Load devices and alerts in parallel with timeout
         const [devicesResponse, alertsResponse] = await Promise.all([
-          fetch(`${import.meta.env.VITE_BACKEND_URL}/api/devices`, { headers }),
-          fetch(`${import.meta.env.VITE_BACKEND_URL}/api/alerts`, { headers })
+          fetch(`${import.meta.env.VITE_BACKEND_URL}/api/devices`, { headers, signal: devicesController.signal }),
+          fetch(`${import.meta.env.VITE_BACKEND_URL}/api/alerts`, { headers, signal: alertsController.signal })
         ]);
+        
+        clearTimeout(devicesTimeout);
+        clearTimeout(alertsTimeout);
         
         const devicesData = devicesResponse.ok ? await devicesResponse.json() : [];
         const safeDevicesData = Array.isArray(devicesData) ? devicesData : [];
