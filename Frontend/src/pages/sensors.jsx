@@ -82,6 +82,14 @@ export default function Sensors() {
     loadSensors();
   }, []);
 
+  // Poll readings every 2 seconds for live updates
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadReadings();
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
   async function loadSensors() {
     setIsLoading(true);
     try {
@@ -121,13 +129,28 @@ export default function Sensors() {
       
       setSensors(transformedDevices);
       
+      // Load latest readings
+      await loadReadings(transformedDevices);
+    } catch (error) {
+      console.error("Failed to load sensors:", error);
+      setSensors([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function loadReadings(devices = sensors) {
+    if (devices.length === 0) return;
+    
+    try {
+      const token = localStorage.getItem("token");
+      
       // Load latest readings for each device in parallel
-      const readingsPromises = transformedDevices.map((device) => {
+      const readingsPromises = devices.map((device) => {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout for readings
         
         const url = `${import.meta.env.VITE_BACKEND_URL}/api/readings/latest/?device_id=${device.id}`;
-        console.log("DEBUG: Fetching reading for device", device.id, "from URL:", url);
         
         return fetch(url, {
           headers: {
@@ -137,20 +160,16 @@ export default function Sensors() {
         })
         .then(async (readingResponse) => {
           clearTimeout(timeoutId);
-          console.log("DEBUG: Reading response for device", device.id, "status:", readingResponse.status);
           if (readingResponse.status === 404) return null;
           if (readingResponse.ok) {
             const reading = await readingResponse.json();
-            console.log("DEBUG: Reading data for device", device.id, ":", reading);
             const normalized = normalizeReading(reading);
-            console.log("DEBUG: Normalized reading for device", device.id, ":", normalized);
             return { device_id: device.id, ...normalized };
           }
           return null;
         })
         .catch((error) => {
           clearTimeout(timeoutId);
-          console.log("DEBUG: Error fetching reading for device", device.id, ":", error);
           return null;
         });
       });
@@ -159,10 +178,7 @@ export default function Sensors() {
       const validReadings = readings.filter(r => r !== null);
       setLatestReadings(validReadings);
     } catch (error) {
-      console.error("Failed to load sensors:", error);
-      setSensors([]);
-    } finally {
-      setIsLoading(false);
+      console.error("Failed to load readings:", error);
     }
   }
 
