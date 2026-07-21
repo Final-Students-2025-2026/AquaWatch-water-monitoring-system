@@ -31,14 +31,15 @@ export default function Alerts() {
     setIsLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/alerts`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/alerts/`, {
         headers: {
           "Authorization": `Bearer ${token}`
         }
       });
       if (!response.ok) throw new Error("Failed to fetch alerts");
       const data = await response.json();
-      setAlertsArray(Array.isArray(data) ? data : []);
+      // Handle both array responses and paginated responses
+      setAlertsArray(Array.isArray(data) ? data : (data?.results || data?.alerts || data?.data || []));
     } catch (error) {
       console.error("Failed to load alerts:", error);
       setAlertsArray([]);
