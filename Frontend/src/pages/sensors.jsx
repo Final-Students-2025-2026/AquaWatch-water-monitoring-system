@@ -75,7 +75,7 @@ export default function Sensors() {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
       
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/devices/`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/devices/?_t=${Date.now()}`, {
         headers: {
           "Authorization": `Bearer ${token}`
         },
@@ -93,7 +93,7 @@ export default function Sensors() {
       
       // Transform backend data to match frontend expectations
       const transformedDevices = devices.map(device => ({
-        id: device.device_id, // Use device_id field from backend
+        id: device.device_id || device.id, // Handle both field names
         name: device.device_name || device.device_code,
         location: device.location || "Unknown",
         online: device.is_active,
@@ -104,6 +104,8 @@ export default function Sensors() {
         installedAt: device.created_at,
         arduino_mac_address: device.arduino_mac_address || null
       }));
+      
+      console.log("DEBUG: Transformed devices:", transformedDevices);
       
       setSensors(transformedDevices);
       
