@@ -41,7 +41,7 @@ class DeviceListCreateView(generics.ListCreateAPIView):
             if hasattr(self.request.user, 'organization_id') and self.request.user.organization_id:
                 try:
                     org = Organization.objects.get(organization_id=self.request.user.organization_id)
-                    print(f"DEBUG: Found user organization: {org.id}")
+                    print(f"DEBUG: Found user organization: {org.organization_id}")
                 except Organization.DoesNotExist:
                     print(f"DEBUG: User organization not found")
                     pass
@@ -52,14 +52,14 @@ class DeviceListCreateView(generics.ListCreateAPIView):
                     organization_name="Default Organization",
                     defaults={'description': 'Default organization for AquaWatch'}
                 )
-                print(f"DEBUG: Using default organization: {org.id}")
+                print(f"DEBUG: Using default organization: {org.organization_id}")
             # If organization not provided in request, use user's or default
             if 'organization' not in self.request.data:
                 device = serializer.save(organization=org, is_active=True)
             else:
                 device = serializer.save(is_active=True)
             
-            print(f"DEBUG: Created device with ID: {device.id}, organization: {org.id}, is_active: {device.is_active}")
+            print(f"DEBUG: Created device with ID: {device.id}, organization: {org.organization_id}, is_active: {device.is_active}")
         except Exception as e:
             print(f"ERROR: Exception during device creation: {str(e)}")
             print(f"ERROR: Traceback: {traceback.format_exc()}")
