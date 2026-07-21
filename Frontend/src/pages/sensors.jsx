@@ -31,6 +31,20 @@ const paramConfig = [
   { key: "orp",         label: "ORP",   icon: Activity,     unit: "mV"     },
 ];
 
+// Normalize backend reading field names to match frontend expectations
+function normalizeReading(reading) {
+  if (!reading) return null;
+  return {
+    ...reading,
+    ph: reading.ph_value || reading.ph,
+    tds: reading.tds_value || reading.tds,
+    turbidity: reading.turbidity_value || reading.turbidity,
+    temperature: reading.temperature_celsius || reading.temperature,
+    ec: reading.ec_value || reading.ec,
+    orp: reading.orp_value || reading.orp,
+  };
+}
+
 function BatteryBar({ level }) {
   const color = level > 50 ? "bg-green-500" : level > 20 ? "bg-amber-500" : "bg-destructive";
   return (
@@ -128,7 +142,9 @@ export default function Sensors() {
           if (readingResponse.ok) {
             const reading = await readingResponse.json();
             console.log("DEBUG: Reading data for device", device.id, ":", reading);
-            return { device_id: device.id, ...reading };
+            const normalized = normalizeReading(reading);
+            console.log("DEBUG: Normalized reading for device", device.id, ":", normalized);
+            return { device_id: device.id, ...normalized };
           }
           return null;
         })
