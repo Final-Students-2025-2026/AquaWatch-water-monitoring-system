@@ -82,13 +82,14 @@ export default function Sensors() {
     loadSensors();
   }, []);
 
-  // Poll readings every 5 seconds for live updates
+  // Poll readings every 5 seconds for live updates (only after sensors are loaded)
   useEffect(() => {
+    if (sensors.length === 0) return;
     const interval = setInterval(() => {
       loadReadings();
     }, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [sensors]);
 
   async function loadSensors() {
     setIsLoading(true);
