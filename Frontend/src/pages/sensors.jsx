@@ -80,15 +80,10 @@ export default function Sensors() {
       if (!response.ok) throw new Error("Failed to load devices");
       const responseData = await response.json();
       
-      console.log("DEBUG loadSensors - Raw response:", responseData);
-      
       // Handle both array responses and paginated responses
       const devices = Array.isArray(responseData) 
         ? responseData 
         : (responseData?.results || responseData?.devices || responseData?.data || []);
-      
-      console.log("DEBUG loadSensors - Devices array:", devices);
-      console.log("DEBUG loadSensors - Devices count:", devices.length);
       
       // Transform backend data to match frontend expectations
       const transformedDevices = devices.map(device => ({
@@ -103,8 +98,6 @@ export default function Sensors() {
         installedAt: device.created_at,
         arduino_mac_address: device.arduino_mac_address || null
       }));
-      
-      console.log("DEBUG loadSensors - Transformed devices:", transformedDevices);
       
       setSensors(transformedDevices);
       
