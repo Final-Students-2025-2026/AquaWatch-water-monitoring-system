@@ -75,7 +75,7 @@ export default function Sensors() {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
       
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/devices`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/devices/`, {
         headers: {
           "Authorization": `Bearer ${token}`
         },
@@ -166,7 +166,7 @@ export default function Sensors() {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
       
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/devices`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/devices/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -263,7 +263,7 @@ export default function Sensors() {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
       
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/devices/${pendingDeleteId}`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/devices/${pendingDeleteId}/`, {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${token}`

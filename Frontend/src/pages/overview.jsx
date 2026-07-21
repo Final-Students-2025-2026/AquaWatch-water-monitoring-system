@@ -56,8 +56,8 @@ export default function Overview() {
         
         // Load devices and alerts in parallel with timeout
         const [devicesResponse, alertsResponse] = await Promise.all([
-          fetch(`${import.meta.env.VITE_BACKEND_URL}/api/devices`, { headers, signal: devicesController.signal }),
-          fetch(`${import.meta.env.VITE_BACKEND_URL}/api/alerts`, { headers, signal: alertsController.signal })
+          fetch(`${import.meta.env.VITE_BACKEND_URL}/api/devices/`, { headers, signal: devicesController.signal }),
+          fetch(`${import.meta.env.VITE_BACKEND_URL}/api/alerts/`, { headers, signal: alertsController.signal })
         ]);
         
         clearTimeout(devicesTimeout);
