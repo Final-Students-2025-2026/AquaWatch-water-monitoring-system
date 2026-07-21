@@ -33,31 +33,37 @@ class DeviceListCreateView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         """Automatically assign organization if not provided."""
         from .models import Organization
+        import traceback
         print(f"DEBUG: perform_create called with data: {self.request.data}")
-        # Try to use user's organization if available
-        org = None
-        if hasattr(self.request.user, 'organization_id') and self.request.user.organization_id:
-            try:
-                org = Organization.objects.get(organization_id=self.request.user.organization_id)
-                print(f"DEBUG: Found user organization: {org.id}")
-            except Organization.DoesNotExist:
-                print(f"DEBUG: User organization not found")
-                pass
-        
-        # Fallback to default organization if user org not found or not available
-        if not org:
-            org, _ = Organization.objects.get_or_create(
-                organization_name="Default Organization",
-                defaults={'description': 'Default organization for AquaWatch'}
-            )
-            print(f"DEBUG: Using default organization: {org.id}")
-        # If organization not provided in request, use user's or default
-        if 'organization' not in self.request.data:
-            device = serializer.save(organization=org, is_active=True)
-        else:
-            device = serializer.save(is_active=True)
-        
-        print(f"DEBUG: Created device with ID: {device.id}, organization: {org.id}, is_active: {device.is_active}")
+        try:
+            # Try to use user's organization if available
+            org = None
+            if hasattr(self.request.user, 'organization_id') and self.request.user.organization_id:
+                try:
+                    org = Organization.objects.get(organization_id=self.request.user.organization_id)
+                    print(f"DEBUG: Found user organization: {org.id}")
+                except Organization.DoesNotExist:
+                    print(f"DEBUG: User organization not found")
+                    pass
+            
+            # Fallback to default organization if user org not found or not available
+            if not org:
+                org, _ = Organization.objects.get_or_create(
+                    organization_name="Default Organization",
+                    defaults={'description': 'Default organization for AquaWatch'}
+                )
+                print(f"DEBUG: Using default organization: {org.id}")
+            # If organization not provided in request, use user's or default
+            if 'organization' not in self.request.data:
+                device = serializer.save(organization=org, is_active=True)
+            else:
+                device = serializer.save(is_active=True)
+            
+            print(f"DEBUG: Created device with ID: {device.id}, organization: {org.id}, is_active: {device.is_active}")
+        except Exception as e:
+            print(f"ERROR: Exception during device creation: {str(e)}")
+            print(f"ERROR: Traceback: {traceback.format_exc()}")
+            raise
 
 
 class DeviceDetailView(generics.RetrieveUpdateDestroyAPIView):
