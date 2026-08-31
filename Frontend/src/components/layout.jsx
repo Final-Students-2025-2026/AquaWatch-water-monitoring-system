@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import { LayoutDashboard, LineChart, Bell, Cpu, SlidersHorizontal, Settings, LogOut, Menu, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -7,6 +8,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { SettingsModal } from "@/pages/settings";
+import { api } from "@/lib/api";
 
 // App shell: sidebar navigation (collapsible on desktop, drawer on mobile)
 // plus the shared settings/logout controls.
@@ -14,10 +16,19 @@ export function Layout({ children }) {
   const [location, setLocation] = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [activeAlertsCount, setActiveAlertsCount] = useState(0);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const { user, logout } = useAuth();
   const { info } = useToast();
+
+  // Alert count is cached and shared with the overview/alerts pages.
+  const { data: alerts } = useQuery({
+    queryKey: ["alerts"],
+    queryFn: api.getAlerts,
+    placeholderData: [],
+  });
+  const activeAlertsCount = (Array.isArray(alerts) ? alerts : []).filter(
+    (a) => a.status === "active"
+  ).length;
 
   useEffect(() => {
     const stored = localStorage.getItem("aquawatch_sidebar_collapsed");
@@ -31,27 +42,6 @@ export function Layout({ children }) {
     setSidebarCollapsed(newState);
     localStorage.setItem("aquawatch_sidebar_collapsed", String(newState));
   };
-
-  useEffect(() => {
-    async function loadAlertCount() {
-      try {
-        const token = localStorage.getItem("token");
-        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/alerts`, {
-          headers: {
-            "Authorization": `Bearer ${token}`
-          }
-        });
-        if (response.ok) {
-          const alerts = await response.json();
-          const activeCount = Array.isArray(alerts) ? alerts.filter(a => a.status === "active").length : 0;
-          setActiveAlertsCount(activeCount);
-        }
-      } catch (error) {
-        console.error("Failed to load alert count:", error);
-      }
-    }
-    loadAlertCount();
-  }, []);
 
   const handleLogout = () => {
     logout();

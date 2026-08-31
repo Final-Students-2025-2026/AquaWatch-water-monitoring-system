@@ -4,6 +4,13 @@ AquaWatch is our final year project. It's an end-to-end water quality monitoring
 system that reads live sensor data from an ESP32 installed on a sampling station,
 sends it to a cloud backend, and lets you view everything through a web dashboard.
 
+AquaWatch was designed and developed as a two-person team project:
+
+- **Dennis Opoku Amponsah** — Index 3388322 — backend API, cloud deployment,
+  telemetry pipeline and the ESP32 firmware.
+- **Okoi Ampomaa Judith** — Index 3405922 — frontend dashboard, UI/UX design and
+  the visualization layers.
+
 The system tracks temperature, pH, total dissolved solids (TDS), electrical
 conductivity (EC) and turbidity, and raises alerts whenever a reading goes
 outside acceptable limits. The whole setup is split into three parts:
@@ -170,8 +177,8 @@ along for reference.
 
 ## A note on scope and limitations
 
-A few things I kept deliberately simple, mainly because of time on a single
-project:
+A few things we kept deliberately simple, mainly because of the constraints of a
+two-person final year project:
 
 - Sensor calibration is done through the two constant values in the firmware
   (`calibph7` / `calibph4`). In a proper deployment you'd want an in-field

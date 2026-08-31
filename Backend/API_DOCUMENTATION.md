@@ -7,7 +7,7 @@ live under the `/api/` prefix.
 Base URL used in these examples:
 
 ```
-https://aquawatch-p2mc.onrender.com/api
+https://aquawatch-188s.onrender.com/api
 ```
 
 When running locally the base URL is `http://localhost:8000/api`.

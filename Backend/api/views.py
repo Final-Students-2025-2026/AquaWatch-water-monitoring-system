@@ -3,6 +3,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from django.db.models import Q
+from django.core.cache import cache
 from django.http import HttpResponse
 from datetime import datetime, timezone, timedelta
 from django.utils import timezone as django_timezone
@@ -85,9 +86,10 @@ class SensorReadingListView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         device_id = self.request.query_params.get('device_id')
+        qs = SensorReading.objects.select_related('device')
         if device_id:
-            return SensorReading.objects.filter(device_id=device_id)
-        return SensorReading.objects.all()
+            qs = qs.filter(device_id=device_id)
+        return qs
 
     def create(self, request, *args, **kwargs):
         """
@@ -162,7 +164,11 @@ class SensorReadingListView(generics.ListCreateAPIView):
                 is_alert=int(data_dict.get('TIER', 0)) > 0,
                 alert_reason=f"TIER: {data_dict.get('TIER', 0)}, ORP: {data_dict.get('ORP', 0)}" if int(data_dict.get('TIER', 0)) > 0 else None
             )
-            
+
+            # Invalidate the cached "latest reading" so the next poll returns
+            # the freshly ingested data.
+            cache.delete(f'latest_reading_{device.id}')
+
             return Response(
                 {'status': 'success', 'reading_id': reading.id},
                 status=status.HTTP_201_CREATED
@@ -186,49 +192,16 @@ def get_latest_reading(request):
             {'detail': 'device_id parameter is required.'},
             status=status.HTTP_400_BAD_REQUEST
         )
-    
-    try:
-        device_code = f"ARDUINO_{device_id}"
-        device = Device.objects.filter(device_code=device_code).first()
-        
-        if not device:
-            device = Device.objects.filter(id=device_id).first()
-        
-        if not device:
-            return Response({
-                'reading_id': None,
-                'device_id': int(device_id),
-                'reading_timestamp': None,
-                'ph_value': 0.0,
-                'turbidity_value': 0.0,
-                'tds_value': 0.0,
-                'temperature_celsius': 0.0,
-                'ec_value': 0.0,
-                'is_alert': False,
-                'alert_reason': None,
-                'message': f'Device {device_id} not found'
-            }, status=status.HTTP_200_OK)
-        
-        reading = SensorReading.objects.filter(device=device).order_by('-reading_timestamp').first()
-        if not reading:
-            return Response({
-                'reading_id': None,
-                'device_id': int(device_id),
-                'reading_timestamp': None,
-                'ph_value': 0.0,
-                'turbidity_value': 0.0,
-                'tds_value': 0.0,
-                'temperature_celsius': 0.0,
-                'ec_value': 0.0,
-                'is_alert': False,
-                'alert_reason': None,
-                'message': f'No readings found for device {device_id}'
-            })
-        return Response(SensorReadingSerializer(reading).data)
-    except Exception as e:
-        return Response({
+
+    cache_key = f'latest_reading_{device_id}'
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return Response(cached)
+
+    def empty_payload(message):
+        return {
             'reading_id': None,
-            'device_id': int(device_id) if device_id else None,
+            'device_id': int(device_id),
             'reading_timestamp': None,
             'ph_value': 0.0,
             'turbidity_value': 0.0,
@@ -237,7 +210,41 @@ def get_latest_reading(request):
             'ec_value': 0.0,
             'is_alert': False,
             'alert_reason': None,
-            'message': f'Error retrieving reading: {str(e)}'
+            'message': message,
+        }
+
+    try:
+        # Single lookup: resolve device by device_code OR numeric id.
+        from django.db.models import Q
+        device_code = f"ARDUINO_{device_id}"
+        device = Device.objects.filter(
+            Q(device_code=device_code) | Q(id=device_id)
+        ).first()
+
+        if not device:
+            response = empty_payload(f'Device {device_id} not found')
+            cache.set(cache_key, response, 2)
+            return Response(response, status=status.HTTP_200_OK)
+
+        # Use the composite index: order by latest reading for this device.
+        reading = (
+            SensorReading.objects
+            .select_related('device')
+            .filter(device=device)
+            .order_by('-reading_timestamp')
+            .first()
+        )
+        if not reading:
+            response = empty_payload(f'No readings found for device {device_id}')
+            cache.set(cache_key, response, 2)
+            return Response(response)
+
+        response = SensorReadingSerializer(reading).data
+        cache.set(cache_key, response, 2)
+        return Response(response)
+    except Exception as e:
+        return Response({
+            **empty_payload(f'Error retrieving reading: {str(e)}')
         }, status=status.HTTP_200_OK)
 
 
@@ -258,7 +265,7 @@ def get_readings_history(request):
     
     try:
         since = django_timezone.now() - timedelta(hours=hours)
-        readings = SensorReading.objects.filter(
+        readings = SensorReading.objects.select_related('device').filter(
             device_id=device_id,
             reading_timestamp__gte=since
         ).order_by('reading_timestamp')
@@ -302,7 +309,7 @@ class AlertListView(generics.ListAPIView):
         device_id = self.request.query_params.get('device_id')
         status_filter = self.request.query_params.get('status')
         
-        queryset = Alert.objects.all()
+        queryset = Alert.objects.select_related('device', 'reading')
         if device_id:
             queryset = queryset.filter(device_id=device_id)
         if status_filter:
@@ -312,7 +319,7 @@ class AlertListView(generics.ListAPIView):
 
 
 class AlertDetailView(generics.RetrieveUpdateAPIView):
-    queryset = Alert.objects.all()
+    queryset = Alert.objects.select_related('device', 'reading')
     serializer_class = AlertSerializer
     permission_classes = [IsAuthenticated]
 

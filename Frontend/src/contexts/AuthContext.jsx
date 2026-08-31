@@ -1,4 +1,6 @@
 import { createContext, useContext, useState, useEffect, useRef } from "react";
+import { setUnauthorizedHandler } from "@/lib/authEvents";
+import { api } from "@/lib/api";
 
 const AuthContext = createContext(null);
 
@@ -10,7 +12,8 @@ function isTokenExpired(token) {
     if (!payload) return true;
     const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
     const decoded = JSON.parse(atob(base64));
-    if (!decoded.exp) return false;
+    // A token without an exp claim must not be trusted as valid.
+    if (!decoded.exp) return true;
     return decoded.exp * 1000 < Date.now();
   } catch (error) {
     console.error("Failed to decode token:", error);
@@ -86,22 +89,37 @@ export function AuthProvider({ children }) {
   }, [isAuthenticated]);
 
   useEffect(() => {
-    // Restore the session from localStorage on initial load.
-    const token = localStorage.getItem("token");
-    const storedUser = localStorage.getItem("aquawatch_user");
-    if (token && storedUser && !isTokenExpired(token)) {
+    // Any 401 from an authenticated API call must return the user to login.
+    setUnauthorizedHandler(() => {
+      logout();
+      window.location.href = `${import.meta.env.BASE_URL || "/"}#/login`;
+    });
+
+    // Restore the session only after confirming the token is still valid
+    // with the server. We never trust localStorage on its own, otherwise a
+    // stale/fake token would let a user straight into the dashboard.
+    const restore = async () => {
+      const token = localStorage.getItem("token");
+      const storedUser = localStorage.getItem("aquawatch_user");
+      if (!token || !storedUser || isTokenExpired(token)) {
+        logout();
+        setIsLoading(false);
+        return;
+      }
       try {
-        const parsedUser = JSON.parse(storedUser);
-        setUser(parsedUser);
+        const user = await api.getMe(token);
+        localStorage.setItem("aquawatch_user", JSON.stringify(user));
+        setUser(user);
         setIsAuthenticated(true);
       } catch (error) {
-        console.error("Failed to parse stored user:", error);
+        // The server rejected the token -> the stored session is invalid.
         logout();
+      } finally {
+        setIsLoading(false);
       }
-    } else if (isTokenExpired(token)) {
-      logout();
-    }
-    setIsLoading(false);
+    };
+    restore();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

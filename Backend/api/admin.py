@@ -10,14 +10,14 @@ class OrganizationAdmin(admin.ModelAdmin):
 
 @admin.register(Device)
 class DeviceAdmin(admin.ModelAdmin):
-    list_display = ['device_id', 'device_name', 'device_code', 'device_type', 'organization', 'is_active', 'created_at']
+    list_display = ['id', 'device_name', 'device_code', 'device_type', 'organization', 'is_active', 'created_at']
     list_filter = ['is_active', 'device_type', 'organization']
     search_fields = ['device_name', 'device_code', 'location']
 
 
 @admin.register(SensorReading)
 class SensorReadingAdmin(admin.ModelAdmin):
-    list_display = ['reading_id', 'device', 'reading_timestamp', 'ph_value', 'turbidity_value', 'tds_value', 'temperature_celsius', 'is_alert']
+    list_display = ['id', 'device', 'reading_timestamp', 'ph_value', 'turbidity_value', 'tds_value', 'temperature_celsius', 'is_alert']
     list_filter = ['is_alert', 'reading_timestamp', 'device']
     search_fields = ['device__device_name', 'device__device_code']
     date_hierarchy = 'reading_timestamp'

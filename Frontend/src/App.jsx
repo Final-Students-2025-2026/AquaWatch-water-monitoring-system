@@ -16,7 +16,16 @@ import Thresholds from "@/pages/thresholds";
 import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30 * 1000,
+      gcTime: 5 * 60 * 1000,
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated, isLoading } = useAuth();

@@ -1,9 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/contexts/ToastContext";
+import { api } from "@/lib/api";
 import { AlertTriangle, Bell, BellOff, BellRing, CheckCircle2, Clock, MapPin, Zap } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
@@ -17,39 +19,26 @@ function severityBadge(severity) {
 }
 
 export default function Alerts() {
-  const [alertsArray, setAlertsArray] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isSilenced, setIsSilenced] = useState(false);
+  const queryClient = useQueryClient();
   const { success, info, error } = useToast();
 
-  useEffect(() => {
-    loadAlerts();
-  }, []);
-
-  async function loadAlerts() {
-    setIsLoading(true);
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/alerts/`, {
-        headers: {
-          "Authorization": `Bearer ${token}`
-        }
-      });
-      if (!response.ok) throw new Error("Failed to fetch alerts");
-      const data = await response.json();
-      setAlertsArray(Array.isArray(data) ? data : (data?.results || data?.alerts || data?.data || []));
-    } catch (error) {
-      console.error("Failed to load alerts:", error);
-      setAlertsArray([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }
+  // Alerts are cached and shared with the sidebar badge + overview page.
+  const { data: alertsData, isLoading, refetch } = useQuery({
+    queryKey: ["alerts"],
+    queryFn: api.getAlerts,
+    placeholderData: [],
+  });
+  const alertsArray = Array.isArray(alertsData) ? alertsData : [];
 
   const activeAlerts = alertsArray.filter((a) => a.status === "active");
   const acknowledgedAlerts = alertsArray.filter((a) => a.status === "acknowledged");
   const resolvedAlerts = alertsArray.filter((a) => a.status === "resolved");
+
+  async function refreshAlerts() {
+    await queryClient.invalidateQueries({ queryKey: ["alerts"] });
+  }
 
   async function handleUpdate(id, status) {
     setIsUpdating(true);
@@ -64,7 +53,7 @@ export default function Alerts() {
         body: JSON.stringify({ status })
       });
       if (!response.ok) throw new Error("Failed to update alert");
-      await loadAlerts();
+      await refreshAlerts();
       if (status === "acknowledged") {
         info("Alert acknowledged");
       } else if (status === "resolved") {
@@ -99,7 +88,7 @@ export default function Alerts() {
             })
           )
         );
-        await loadAlerts();
+        await refreshAlerts();
         setIsSilenced(true);
         success(`${activeAlerts.length} alert${activeAlerts.length > 1 ? "s" : ""} silenced`);
       } else {
@@ -120,7 +109,7 @@ export default function Alerts() {
             })
           )
         );
-        await loadAlerts();
+        await refreshAlerts();
         setIsSilenced(false);
         success(`${acknowledgedAlerts.length} alert${acknowledgedAlerts.length > 1 ? "s" : ""} restored`);
       }

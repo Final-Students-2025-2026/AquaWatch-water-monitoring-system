@@ -105,6 +105,19 @@ REST_FRAMEWORK = {
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
+# ── Caching ────────────────────────────────────────────────────────
+# In-process cache with a per-worker refresh timer. Keeps frequently read
+# telemetry/alerts fast without adding an external Redis dependency. Each
+# gunicorn worker keeps its own copy, so the TTL also acts as a refresh
+# interval and keeps the data reasonably fresh (2 seconds).
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'aquawatch-cache',
+        'TIMEOUT': 2,
+    }
+}
+
 # ── JWT Authentication ────────────────────────────────────────────
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=24),

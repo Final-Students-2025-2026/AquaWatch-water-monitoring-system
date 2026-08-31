@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Droplet, Activity, AlertTriangle, CheckCircle2, Thermometer, FlaskConical, Eye, Zap } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
 import { useTelemetry } from "@/contexts/TelemetryContext";
+import { api } from "@/lib/api";
 
 const STATUS_DOT = {
   normal:   "bg-green-500",
@@ -14,11 +15,6 @@ const STATUS_DOT = {
 };
 
 export default function Overview() {
-  const [summary, setSummary] = useState(null);
-  const [trends, setTrends] = useState(null);
-  const [sensors, setSensors] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-
   // Live telemetry from hardware
   const {
     temperature,
@@ -37,82 +33,49 @@ export default function Overview() {
     getSafetyColor,
   } = useTelemetry();
 
-  useEffect(() => {
-    async function loadData() {
-      setIsLoading(true);
-      try {
-        const token = localStorage.getItem("token");
-        const headers = {};
-        
-        if (token) {
-          headers["Authorization"] = `Bearer ${token}`;
-        }
-        
-        const devicesController = new AbortController();
-        const alertsController = new AbortController();
-        const devicesTimeout = setTimeout(() => devicesController.abort(), 30000);
-        const alertsTimeout = setTimeout(() => alertsController.abort(), 30000);
-        
-        // Load devices and alerts in parallel with timeout
-        const [devicesResponse, alertsResponse] = await Promise.all([
-          fetch(`${import.meta.env.VITE_BACKEND_URL}/api/devices/`, { headers, signal: devicesController.signal }),
-          fetch(`${import.meta.env.VITE_BACKEND_URL}/api/alerts/`, { headers, signal: alertsController.signal })
-        ]);
-        
-        clearTimeout(devicesTimeout);
-        clearTimeout(alertsTimeout);
-        
-        const devicesData = devicesResponse.ok ? await devicesResponse.json() : [];
-        const safeDevicesData = Array.isArray(devicesData) 
-          ? devicesData 
-          : (devicesData?.results || devicesData?.devices || devicesData?.data || []);
-        
-        const alertsData = alertsResponse.ok ? await alertsResponse.json() : [];
-        const safeAlertsData = Array.isArray(alertsData) 
-          ? alertsData 
-          : (alertsData?.results || alertsData?.alerts || alertsData?.data || []);
-        
-        const transformedSensors = safeDevicesData.map(device => ({
-          id: device.device_id || device.id,
-          name: device.device_name || device.device_code,
-          location: device.location || "Unknown",
-          online: device.is_active,
-          status: device.is_active ? "normal" : "offline",
-        }));
-        
-        const summaryData = {
-          totalSensors: transformedSensors.length,
-          onlineSensors: transformedSensors.filter(d => d.online).length,
-          offlineSensors: transformedSensors.filter(d => !d.online).length,
-          criticalAlerts: safeAlertsData.filter(a => a.status === "active" && a.severity === "critical").length,
-          warningAlerts: safeAlertsData.filter(a => a.status === "active" && (a.severity === "medium" || a.severity === "warning")).length,
-          overallStatus: safeAlertsData.some(a => a.status === "active" && a.severity === "critical") ? "critical" : 
-                        safeAlertsData.some(a => a.status === "active") ? "warning" : "normal",
-        };
-        
-        setSummary(summaryData);
-        setSensors(transformedSensors);
-        
-        // Generate trend data from telemetry history
-        const trendsData = history.map(h => ({
-          label: new Date(h.timestamp).getHours(),
-          ec: h.ec,
-          ph: h.ph,
-          tds: h.tds,
-          turbidity: h.turb,
-          temperature: h.temp,
-        }));
-        setTrends(trendsData);
-      } catch (error) {
-        console.error("Failed to load dashboard data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    loadData();
-  }, []);
+  // Devices + alerts load via React Query (cached + refetch on focus).
+  const { data: devicesData, isLoading: devicesLoading } = useQuery({
+    queryKey: ["devices"],
+    queryFn: api.getDevices,
+    placeholderData: [],
+  });
+  const { data: alertsData, isLoading: alertsLoading } = useQuery({
+    queryKey: ["alerts"],
+    queryFn: api.getAlerts,
+    placeholderData: [],
+  });
 
-  if (isLoading) {
+  const isLoading = devicesLoading || alertsLoading;
+
+  const sensors = (Array.isArray(devicesData) ? devicesData : []).map((device) => ({
+    id: device.device_id || device.id,
+    name: device.device_name || device.device_code,
+    location: device.location || "Unknown",
+    online: device.is_active,
+    status: device.is_active ? "normal" : "offline",
+  }));
+
+  const safeAlertsData = Array.isArray(alertsData) ? alertsData : [];
+
+  const summary = {
+    totalSensors: sensors.length,
+    onlineSensors: sensors.filter((d) => d.online).length,
+    offlineSensors: sensors.filter((d) => !d.online).length,
+    criticalAlerts: safeAlertsData.filter((a) => a.status === "active" && a.severity === "critical").length,
+    warningAlerts: safeAlertsData.filter((a) => a.status === "active" && (a.severity === "medium" || a.severity === "warning")).length,
+    overallStatus: safeAlertsData.some((a) => a.status === "active" && a.severity === "critical") ? "critical" :
+                   safeAlertsData.some((a) => a.status === "active") ? "warning" : "normal",
+  };
+
+  const showFullSkeleton = isLoading && !devicesData?.length && !alertsData?.length;
+
+  const statusLabel = summary?.overallStatus?.replace("_", " ") ?? "Unknown";
+  const statusColor =
+    summary?.overallStatus === "critical" ? "text-destructive" :
+    summary?.overallStatus === "warning"  ? "text-amber-500"   :
+    summary?.overallStatus === "normal"   ? "text-green-600"   : "text-muted-foreground";
+
+  if (showFullSkeleton) {
     return (
       <div className="space-y-5">
         <Skeleton className="h-8 w-48 rounded-lg" />
@@ -123,13 +86,6 @@ export default function Overview() {
       </div>
     );
   }
-
-  const statusLabel = summary?.overallStatus?.replace("_", " ") ?? "Unknown";
-  const statusColor =
-    summary?.overallStatus === "critical" ? "text-destructive" :
-    summary?.overallStatus === "warning"  ? "text-amber-500"   :
-    summary?.overallStatus === "normal"   ? "text-green-600"   : "text-muted-foreground";
-
   return (
     <div className="space-y-5">
       {/* Heading */}

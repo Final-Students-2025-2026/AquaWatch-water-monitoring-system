@@ -1,10 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Download, TrendingUp, FlaskConical, Zap, Eye, Thermometer, Activity, Droplets } from "lucide-react";
+import { api } from "@/lib/api";
 import {
   AreaChart, Area, LineChart, Line, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
@@ -55,86 +57,53 @@ function exportCsv(readings) {
 
 export default function Historical() {
   const [period, setPeriod] = useState("week");
-  const [trends, setTrends] = useState([]);
-  const [readings, setReadings] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const hours = period === "today" ? 24 : period === "week" ? 168 : 720;
 
-  useEffect(() => {
-    async function loadData() {
-      setIsLoading(true);
-      try {
-        const token = localStorage.getItem("token");
-        const hours = period === "today" ? 24 : period === "week" ? 168 : 720;
-        
-        // Get devices to get device_id
-        const devicesResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/devices/`, {
-          headers: {
-            "Authorization": `Bearer ${token}`
-          }
-        });
-        const devicesData = devicesResponse.ok ? await devicesResponse.json() : [];
-        const devices = Array.isArray(devicesData) ? devicesData : (devicesData?.results || devicesData?.devices || devicesData?.data || []);
-        
-        if (devices.length === 0 || !devices[0]?.device_id) {
-          setTrends([]);
-          setReadings([]);
-          setIsLoading(false);
-          return;
-        }
-        
-        // Get historical readings for the first device
-        const deviceId = devices[0].device_id;
-        const historyResponse = await fetch(
-          `${import.meta.env.VITE_BACKEND_URL}/api/readings/history/?device_id=${deviceId}&hours=${hours}`,
-          {
-            headers: {
-              "Authorization": `Bearer ${token}`
-            }
-          }
-        );
-        
-        if (historyResponse.ok) {
-          const historyData = await historyResponse.json();
-          const historyReadings = Array.isArray(historyData?.readings) ? historyData.readings : [];
-          
-          const transformedTrends = historyReadings.map(r => ({
-            label: new Date(r.reading_timestamp).getHours(),
-            ec: r.ec_value,
-            ph: r.ph_value,
-            tds: r.tds_value,
-            turbidity: r.turbidity_value,
-            temperature: r.temperature_celsius,
-            orp: null
-          }));
-          
-          const transformedReadings = historyReadings.map(r => ({
-            id: r.reading_id,
-            sensorId: r.device_id,
-            recordedAt: r.reading_timestamp,
-            ph: r.ph_value,
-            tds: r.tds_value,
-            turbidity: r.turbidity_value,
-            temperature: r.temperature_celsius,
-            ec: r.ec_value,
-            orp: null
-          }));
-          
-          setTrends(transformedTrends);
-          setReadings(transformedReadings);
-        } else {
-          setTrends([]);
-          setReadings([]);
-        }
-      } catch (error) {
-        console.error("Failed to load historical data:", error);
-        setTrends([]);
-        setReadings([]);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    loadData();
-  }, [period]);
+  // Devices are cached and shared with the overview page.
+  const { data: devicesData } = useQuery({
+    queryKey: ["devices"],
+    queryFn: api.getDevices,
+    placeholderData: [],
+  });
+  const devices = Array.isArray(devicesData) ? devicesData : [];
+  const deviceId = devices[0]?.device_id;
+
+  const enabled = Boolean(deviceId);
+  const { data: historyData, isLoading } = useQuery({
+    queryKey: ["history", deviceId, hours],
+    queryFn: () => api.getHistory(deviceId, hours),
+    enabled,
+    placeholderData: [],
+  });
+
+  // transform the raw history payload into chart + readings arrays
+  const historyReadings = (() => {
+    if (Array.isArray(historyData)) return historyData;
+    if (historyData && Array.isArray(historyData.readings)) return historyData.readings;
+    return [];
+  })();
+
+  const trends = historyReadings.map((r) => ({
+    label: new Date(r.reading_timestamp).getHours(),
+    ec: r.ec_value,
+    ph: r.ph_value,
+    tds: r.tds_value,
+    turbidity: r.turbidity_value,
+    temperature: r.temperature_celsius,
+    orp: null,
+  }));
+
+  const readings = historyReadings.map((r) => ({
+    id: r.reading_id,
+    sensorId: r.device_id,
+    recordedAt: r.reading_timestamp,
+    ph: r.ph_value,
+    tds: r.tds_value,
+    turbidity: r.turbidity_value,
+    temperature: r.temperature_celsius,
+    ec: r.ec_value,
+    orp: null,
+  }));
 
   // Ensure trends is always an array for charts
   const chartData = Array.isArray(trends) ? trends : [];

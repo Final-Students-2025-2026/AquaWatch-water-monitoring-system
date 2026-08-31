@@ -58,6 +58,10 @@ class SensorReading(models.Model):
         verbose_name = 'Sensor Reading'
         verbose_name_plural = 'Sensor Readings'
         ordering = ['-reading_timestamp']
+        indexes = [
+            models.Index(fields=['device', '-reading_timestamp'], name='idx_reading_device_ts'),
+            models.Index(fields=['-reading_timestamp'], name='idx_reading_ts'),
+        ]
 
     def __str__(self):
         return f"Reading {self.reading_id} - {self.reading_timestamp}"
@@ -101,6 +105,10 @@ class Alert(models.Model):
         verbose_name = 'Alert'
         verbose_name_plural = 'Alerts'
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['status'], name='idx_alert_status'),
+            models.Index(fields=['device', '-created_at'], name='idx_alert_device_created'),
+        ]
 
     def __str__(self):
         return f"Alert {self.alert_id} - {self.alert_type}"

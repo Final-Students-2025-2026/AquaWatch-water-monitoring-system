@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/contexts/ToastContext";
 import { PinModal } from "@/components/PinModal";
+import { api } from "@/lib/api";
 import { FlaskConical, Droplets, Eye, Thermometer, Zap, Activity, Edit2, Check, X, SlidersHorizontal } from "lucide-react";
 import { format } from "date-fns";
 
@@ -37,9 +39,8 @@ const paramColors = {
 };
 
 export default function Thresholds() {
-  const [thresholds, setThresholds] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
+  const queryClient = useQueryClient();
   const { success, error } = useToast();
 
   const [editing, setEditing] = useState(null);
@@ -49,43 +50,21 @@ export default function Thresholds() {
   const [pinModalOpen, setPinModalOpen] = useState(false);
   const [pendingThresholdUpdate, setPendingThresholdUpdate] = useState(null);
 
-  useEffect(() => {
-    loadThresholds();
-  }, []);
+  const { data: thresholdsData, isLoading } = useQuery({
+    queryKey: ["thresholds"],
+    queryFn: api.getThresholds,
+    placeholderData: [],
+  });
+  const data = Array.isArray(thresholdsData) ? thresholdsData : [];
 
-  async function loadThresholds() {
-    setIsLoading(true);
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/thresholds`, {
-        headers: {
-          "Authorization": `Bearer ${token}`
-        }
-      });
-      if (!response.ok) throw new Error("Failed to load thresholds");
-      const responseData = await response.json();
-      
-      const data = Array.isArray(responseData) 
-        ? responseData 
-        : (responseData?.results || responseData?.thresholds || responseData?.data || []);
-      
-      const transformedThresholds = data.map(t => ({
-        id: t.threshold_id,
-        parameter: t.parameter,
-        minValue: t.min_value,
-        maxValue: t.max_value,
-        unit: getUnitForParameter(t.parameter),
-        updatedAt: t.updated_at
-      }));
-      
-      setThresholds(Array.isArray(transformedThresholds) ? transformedThresholds : []);
-    } catch (error) {
-      console.error("Failed to load thresholds:", error);
-      setThresholds([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }
+  const thresholds = data.map((t) => ({
+    id: t.threshold_id,
+    parameter: t.parameter,
+    minValue: t.min_value,
+    maxValue: t.max_value,
+    unit: getUnitForParameter(t.parameter),
+    updatedAt: t.updated_at
+  }));
 
 function getUnitForParameter(parameter) {
   const units = {
@@ -142,7 +121,7 @@ function getUnitForParameter(parameter) {
         })
       });
       if (!response.ok) throw new Error("Failed to update threshold");
-      await loadThresholds();
+      await queryClient.invalidateQueries({ queryKey: ["thresholds"] });
       setEditing(null);
       success("Changes saved successfully");
     } catch (err) {

@@ -8,6 +8,13 @@ out-tsc
 .expo
 .expo-shared
 
+# built dashboard served by django (regenerated, not committed)
+Backend/frontend_build/
+
+# desktop app build artifacts
+desktop/release/
+desktop/web/
+
 # dependencies
 node_modules
 

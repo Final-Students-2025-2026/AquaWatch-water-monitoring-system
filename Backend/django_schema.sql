@@ -56,6 +56,11 @@ CREATE TABLE sensor_readings (
     alert_reason TEXT
 );
 
+-- Indexes to speed up the frequently-queryed "latest reading" and
+-- history endpoints.
+CREATE INDEX idx_reading_device_ts ON sensor_readings (device_id, reading_timestamp DESC);
+CREATE INDEX idx_reading_ts ON sensor_readings (reading_timestamp DESC);
+
 -- Thresholds table
 CREATE TABLE thresholds (
     threshold_id SERIAL PRIMARY KEY,
@@ -81,6 +86,10 @@ CREATE TABLE alerts (
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
+
+-- Indexes for fast alert filtering (used by the sidebar badge and pages).
+CREATE INDEX idx_alert_status ON alerts (status);
+CREATE INDEX idx_alert_device_created ON alerts (device_id, created_at DESC);
 
 -- Django auth token table
 CREATE TABLE authtoken_token (

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PinModal } from "@/components/PinModal";
 import { useToast } from "@/contexts/ToastContext";
+import { api } from "@/lib/api";
 import {
   Wifi, WifiOff, AlertTriangle, CheckCircle2,
   Thermometer, Droplets, Zap, FlaskConical, Activity, Eye,
@@ -58,11 +60,10 @@ function BatteryBar({ level }) {
 }
 
 export default function Sensors() {
-  const [sensors, setSensors] = useState([]);
   const [latestReadings, setLatestReadings] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const queryClient = useQueryClient();
   const { success, error } = useToast();
 
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -75,9 +76,28 @@ export default function Sensors() {
   const [pinModalOpen, setPinModalOpen] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
 
-  useEffect(() => {
-    loadSensors();
-  }, []);
+  // Devices are cached and shared with the overview page via React Query.
+  const { data: devicesData, isLoading } = useQuery({
+    queryKey: ["devices"],
+    queryFn: api.getDevices,
+    placeholderData: [],
+  });
+
+  const sensors = (Array.isArray(devicesData) ? devicesData : []).map((device) => ({
+    id: device.device_id || device.id,
+    name: device.device_name || device.device_code,
+    location: device.location || "Unknown",
+    online: device.is_active,
+    status: device.is_active ? "normal" : "offline",
+    lastReadingAt: device.created_at,
+    installedAt: device.created_at,
+    arduino_mac_address: device.arduino_mac_address || null
+  }));
+
+  async function refreshDevices() {
+    await queryClient.invalidateQueries({ queryKey: ["devices"] });
+    await queryClient.invalidateQueries({ queryKey: ["alerts"] });
+  }
 
   useEffect(() => {
     if (sensors.length === 0) return;
@@ -85,91 +105,26 @@ export default function Sensors() {
       loadReadings();
     }, 5000);
     return () => clearInterval(interval);
-  }, [sensors]);
-
-  async function loadSensors() {
-    setIsLoading(true);
-    try {
-      const token = localStorage.getItem("token");
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000);
-      
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/devices/?_t=${Date.now()}`, {
-        headers: {
-          "Authorization": `Bearer ${token}`
-        },
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-      
-      if (!response.ok) throw new Error("Failed to load devices");
-      const responseData = await response.json();
-      
-      const devices = Array.isArray(responseData) 
-        ? responseData 
-        : (responseData?.results || responseData?.devices || responseData?.data || []);
-      
-      const transformedDevices = devices.map(device => ({
-        id: device.device_id || device.id,
-        name: device.device_name || device.device_code,
-        location: device.location || "Unknown",
-        online: device.is_active,
-        status: device.is_active ? "normal" : "offline",
-        lastReadingAt: device.created_at,
-        installedAt: device.created_at,
-        arduino_mac_address: device.arduino_mac_address || null
-      }));
-      
-      setSensors(transformedDevices);
-      
-      await loadReadings(transformedDevices);
-    } catch (error) {
-      console.error("Failed to load sensors:", error);
-      setSensors([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }
+  }, [sensors.length, sensors.map((s) => s.id).join(",")]);
 
   async function loadReadings(devices = sensors) {
     if (devices.length === 0) return;
-    
     try {
-      const token = localStorage.getItem("token");
-      
-      const readingsPromises = devices.map((device) => {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000);
-        
-        const url = `${import.meta.env.VITE_BACKEND_URL}/api/readings/latest/?device_id=${device.id}`;
-        
-        return fetch(url, {
-          headers: {
-            "Authorization": `Bearer ${token}`
-          },
-          signal: controller.signal
-        })
-        .then(async (readingResponse) => {
-          clearTimeout(timeoutId);
-          if (readingResponse.status === 404) return null;
-          if (readingResponse.ok) {
-            const reading = await readingResponse.json();
+      const readingsResults = await Promise.all(
+        devices.map(async (device) => {
+          try {
+            const reading = await api.getLatestReading(device.id);
+            if (reading?.reading_id == null && reading?.message) return null;
             const normalized = normalizeReading(reading);
             return { device_id: device.id, ...normalized };
+          } catch {
+            return null;
           }
-          return null;
         })
-        .catch((error) => {
-          clearTimeout(timeoutId);
-          return null;
-        });
-      });
-      
-      const readings = await Promise.all(readingsPromises);
-      const validReadings = readings.filter(r => r !== null);
-      setLatestReadings(validReadings);
-    } catch (error) {
-      console.error("Failed to load readings:", error);
+      );
+      setLatestReadings(readingsResults.filter((r) => r !== null));
+    } catch (err) {
+      console.error("Failed to load readings:", err);
     }
   }
 
@@ -220,7 +175,7 @@ export default function Sensors() {
         }
         throw new Error(errorData.detail || errorData.message || errorText || "Failed to create device");
       }
-      await loadSensors();
+      await refreshDevices();
       setDialogOpen(false);
       setName("");
       setLocation("");
@@ -258,7 +213,7 @@ export default function Sensors() {
       });
       if (!response.ok) throw new Error("Failed to assign Arduino");
       success("Arduino assigned successfully");
-      await loadSensors();
+      await refreshDevices();
       setAssignmentDialogOpen(false);
       setMacAddress("");
       setSelectedSensor(null);
@@ -298,7 +253,7 @@ export default function Sensors() {
       clearTimeout(timeoutId);
       
       if (!response.ok) throw new Error("Failed to delete device");
-      await loadSensors();
+      await refreshDevices();
       success("Sensor deleted successfully");
     } catch (err) {
       console.error("Failed to delete sensor:", err);
