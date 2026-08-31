@@ -48,11 +48,10 @@ export default function Overview() {
           headers["Authorization"] = `Bearer ${token}`;
         }
         
-        // Create abort controllers for timeout handling
         const devicesController = new AbortController();
         const alertsController = new AbortController();
-        const devicesTimeout = setTimeout(() => devicesController.abort(), 30000); // 30 second timeout
-        const alertsTimeout = setTimeout(() => alertsController.abort(), 30000); // 30 second timeout
+        const devicesTimeout = setTimeout(() => devicesController.abort(), 30000);
+        const alertsTimeout = setTimeout(() => alertsController.abort(), 30000);
         
         // Load devices and alerts in parallel with timeout
         const [devicesResponse, alertsResponse] = await Promise.all([
@@ -64,18 +63,15 @@ export default function Overview() {
         clearTimeout(alertsTimeout);
         
         const devicesData = devicesResponse.ok ? await devicesResponse.json() : [];
-        // Handle both array responses and paginated responses
         const safeDevicesData = Array.isArray(devicesData) 
           ? devicesData 
           : (devicesData?.results || devicesData?.devices || devicesData?.data || []);
         
         const alertsData = alertsResponse.ok ? await alertsResponse.json() : [];
-        // Handle both array responses and paginated responses
         const safeAlertsData = Array.isArray(alertsData) 
           ? alertsData 
           : (alertsData?.results || alertsData?.alerts || alertsData?.data || []);
         
-        // Transform backend data to match frontend expectations
         const transformedSensors = safeDevicesData.map(device => ({
           id: device.device_id || device.id,
           name: device.device_name || device.device_code,
@@ -84,7 +80,6 @@ export default function Overview() {
           status: device.is_active ? "normal" : "offline",
         }));
         
-        // Calculate summary
         const summaryData = {
           totalSensors: transformedSensors.length,
           onlineSensors: transformedSensors.filter(d => d.online).length,
@@ -149,7 +144,7 @@ export default function Overview() {
         </div>
       </div>
 
-      {/* Summary cards — 2-col on mobile, 4-col on desktop */}
+      {/* Summary cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <Card className="shadow-sm border-l-4 border-l-primary">
           <CardHeader className="flex flex-row items-center justify-between pb-1 pt-4 px-4">
@@ -198,7 +193,7 @@ export default function Overview() {
         </Card>
       </div>
 
-      {/* Live Telemetry Cards */}
+      {/* Telemetry cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         <Card className="shadow-sm border-l-4 border-l-cyan-500">
           <CardHeader className="flex flex-row items-center justify-between pb-1 pt-4 px-4">
@@ -256,7 +251,7 @@ export default function Overview() {
         </Card>
       </div>
 
-      {/* Safety Status Banner */}
+      {/* Safety status */}
       <div className={`rounded-lg border p-4 ${getSafetyColor()}`}>
         <div className="flex items-center gap-3">
           {safetyStatus === 0 && <CheckCircle2 className="h-5 w-5 text-green-600" />}
@@ -283,9 +278,9 @@ export default function Overview() {
         </div>
       </div>
 
-      {/* Charts + sensor list */}
+      {/* Charts and sensor list */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* Live Telemetry Trend chart */}
+        {/* Trend chart */}
         <Card className="lg:col-span-2 shadow-sm">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm md:text-base">
@@ -325,7 +320,7 @@ export default function Overview() {
           </CardContent>
         </Card>
 
-        {/* Sensor status list */}
+        {/* Sensor list */}
         <Card className="shadow-sm">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm md:text-base flex items-center justify-between">

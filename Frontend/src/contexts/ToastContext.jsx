@@ -11,7 +11,6 @@ export function ToastProvider({ children }) {
     
     setToasts((prev) => [...prev, newToast]);
 
-    // Auto dismiss
     setTimeout(() => {
       removeToast(id);
     }, duration);
@@ -53,7 +52,6 @@ export function useToast() {
   return context;
 }
 
-// Toast Container Component
 function ToastContainer({ toasts, onRemove }) {
   return (
     <div className="fixed top-4 right-4 z-[100] flex flex-col gap-3 pointer-events-none">
@@ -64,7 +62,6 @@ function ToastContainer({ toasts, onRemove }) {
   );
 }
 
-// Individual Toast Component
 function Toast({ toast, onRemove }) {
   const { id, message, type } = toast;
 
@@ -101,7 +98,6 @@ function Toast({ toast, onRemove }) {
 
   const style = styles[type] || styles.info;
 
-  // Icons
   const icons = {
     success: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -139,19 +135,16 @@ function Toast({ toast, onRemove }) {
       role="alert"
     >
       <div className="flex items-start gap-3 p-4">
-        {/* Icon */}
         <div className={["shrink-0 w-9 h-9 rounded-full flex items-center justify-center", style.iconBg, style.icon].join(" ")}>
           {icons[type]}
         </div>
 
-        {/* Message */}
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
             {message}
           </p>
         </div>
 
-        {/* Close button */}
         <button
           onClick={() => onRemove(id)}
           className="shrink-0 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
@@ -163,7 +156,6 @@ function Toast({ toast, onRemove }) {
         </button>
       </div>
 
-      {/* Progress bar */}
       <div className="h-1 w-full bg-slate-200 dark:bg-slate-700 rounded-b-xl overflow-hidden">
         <div
           className={["h-full animate-progress", style.progress].join(" ")}

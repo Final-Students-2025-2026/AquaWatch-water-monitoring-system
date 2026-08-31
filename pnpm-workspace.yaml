@@ -1,8 +1,5 @@
 packages:
   - Frontend
-  - artifacts/*
-  - lib/*
-  - lib/integrations/*
 
 catalog:
   '@tailwindcss/vite': ^4.1.14

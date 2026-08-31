@@ -49,19 +49,16 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex">
-      {/* Left Side - Hero Section with Real Image */}
+      {/* Left - hero image */}
       <div className="hidden lg:flex w-1/2 relative overflow-hidden">
-        {/* Real water image from Unsplash */}
         <img
           src="https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=1200&h=800&fit=crop"
           alt="Water landscape"
           className="absolute inset-0 w-full h-full object-cover"
         />
 
-        {/* Dark overlay for text contrast */}
         <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-slate-900/50 to-slate-900/30" />
 
-        {/* Content */}
         <div className="relative z-10 flex flex-col justify-center items-center h-full px-12 text-white">
           <div className="flex items-center gap-4 mb-6">
             <img src="/logo.jpeg" alt="AquaWatch" className="w-16 h-16 rounded-2xl object-cover border border-white/20" />
@@ -92,9 +89,9 @@ export default function Login() {
         </div>
       </div>
 
-      {/* Right Side - Login Form */}
+      {/* Right - login form */}
       <div className="w-full lg:w-1/2 flex items-start lg:items-center justify-center relative bg-white dark:bg-slate-950 p-4 pt-6 lg:p-12">
-        {/* Background image for mobile/tablet (shows on md and below) */}
+        {/* Mobile/tablet background */}
         <div className="absolute inset-0 lg:hidden">
           <img
             src="https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=1200&h=800&fit=crop"
@@ -105,7 +102,7 @@ export default function Login() {
         </div>
 
         <div className="w-full max-w-sm relative z-10 mt-12 lg:mt-0">
-          {/* Mobile Hero Content (visible only on small screens) */}
+          {/* Mobile hero (small screens only) */}
           <div className="lg:hidden text-center text-white mb-8">
             <div className="flex items-center justify-center gap-3 mb-4">
               <img src="/logo.jpeg" alt="AquaWatch" className="w-12 h-12 rounded-2xl object-cover border border-white/20" />
@@ -135,7 +132,7 @@ export default function Login() {
             </div>
           </div>
 
-          {/* Desktop Logo (visible only on large screens) */}
+          {/* Desktop logo (large screens only) */}
           <div className="hidden lg:flex items-center justify-center gap-3 mb-8">
             <img src="/logo.jpeg" alt="AquaWatch" className="w-11 h-11 rounded-xl object-cover" />
             <div>
@@ -144,7 +141,7 @@ export default function Login() {
             </div>
           </div>
 
-          {/* Login Form Header */}
+          {/* Form header */}
           <div className="mb-8 lg:block hidden">
             <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
               Welcome Back
@@ -154,7 +151,7 @@ export default function Login() {
             </p>
           </div>
 
-          {/* Mobile Form Header */}
+          {/* Mobile form header */}
           <div className="mb-6 lg:hidden">
             <h2 className="text-xl font-bold tracking-tight text-white text-center">
               Sign In

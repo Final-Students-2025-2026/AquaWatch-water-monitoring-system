@@ -23,10 +23,12 @@ from .serializers import (
 User = get_user_model()
 
 
+# ────────────────────────── Auth ──────────────────────────
+
+
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def register(request):
-    """Register a new user."""
     serializer = UserRegistrationSerializer(data=request.data)
     if serializer.is_valid():
         user = serializer.save()
@@ -42,7 +44,6 @@ def register(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def login(request):
-    """Login user and return token."""
     try:
         username = request.data.get('username')
         password = request.data.get('password')
@@ -80,14 +81,16 @@ def login(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def me(request):
-    """Get current user information."""
+    """Return the currently authenticated user's profile."""
     return Response(UserSerializer(request.user).data)
+
+
+# ────────────────────────── Profile Updates ──────────────────────────
 
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def change_password(request):
-    """Change user password."""
     serializer = ChangePasswordSerializer(data=request.data)
     if serializer.is_valid():
         user = request.user
@@ -105,7 +108,6 @@ def change_password(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def change_username(request):
-    """Change user username."""
     serializer = ChangeUsernameSerializer(data=request.data)
     if serializer.is_valid():
         new_username = serializer.validated_data['new_username']
@@ -123,7 +125,6 @@ def change_username(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def change_pin(request):
-    """Change user PIN."""
     serializer = ChangePinSerializer(data=request.data)
     if serializer.is_valid():
         user = request.user
@@ -141,7 +142,6 @@ def change_pin(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def change_email(request):
-    """Change user email."""
     serializer = ChangeEmailSerializer(data=request.data)
     if serializer.is_valid():
         new_email = serializer.validated_data['email']
@@ -159,7 +159,6 @@ def change_email(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def change_phone(request):
-    """Change user phone."""
     serializer = ChangePhoneSerializer(data=request.data)
     if serializer.is_valid():
         request.user.phone = serializer.validated_data['phone']
@@ -171,7 +170,6 @@ def change_phone(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def change_company_name(request):
-    """Change company name."""
     serializer = ChangeCompanyNameSerializer(data=request.data)
     if serializer.is_valid():
         request.user.company_name = serializer.validated_data['company_name']
@@ -183,7 +181,6 @@ def change_company_name(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def change_location(request):
-    """Change user location."""
     serializer = ChangeLocationSerializer(data=request.data)
     if serializer.is_valid():
         request.user.location = serializer.validated_data['location']
@@ -195,7 +192,6 @@ def change_location(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def change_profile_picture(request):
-    """Change user profile picture."""
     try:
         serializer = ChangeProfilePictureSerializer(data=request.data)
         if serializer.is_valid():

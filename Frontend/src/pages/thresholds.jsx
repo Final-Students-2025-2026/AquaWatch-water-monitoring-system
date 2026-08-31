@@ -46,7 +46,6 @@ export default function Thresholds() {
   const [minVal, setMinVal] = useState("");
   const [maxVal, setMaxVal] = useState("");
 
-  // PIN modal state for threshold updates
   const [pinModalOpen, setPinModalOpen] = useState(false);
   const [pendingThresholdUpdate, setPendingThresholdUpdate] = useState(null);
 
@@ -66,12 +65,10 @@ export default function Thresholds() {
       if (!response.ok) throw new Error("Failed to load thresholds");
       const responseData = await response.json();
       
-      // Handle both array responses and paginated/object responses
       const data = Array.isArray(responseData) 
         ? responseData 
         : (responseData?.results || responseData?.thresholds || responseData?.data || []);
       
-      // Transform backend data to match frontend expectations
       const transformedThresholds = data.map(t => ({
         id: t.threshold_id,
         parameter: t.parameter,
@@ -114,7 +111,6 @@ function getUnitForParameter(parameter) {
   }
 
   function saveEditRequest(parameter) {
-    // Open PIN modal instead of immediate save
     const body = {
       minValue: minVal !== "" ? parseFloat(minVal) : null,
       maxValue: maxVal !== "" ? parseFloat(maxVal) : null,
@@ -193,7 +189,7 @@ function getUnitForParameter(parameter) {
             const isEditingThis = editing === t.parameter;
 
             return (
-              <Card key={t.id} className="shadow-sm" data-testid={`card-threshold-${t.parameter}`}>
+              <Card key={t.id} className="shadow-sm">
                 <CardHeader className="pb-3 border-b">
                   <div className="flex items-center justify-between">
                     <CardTitle className="flex items-center gap-2 text-base">
@@ -209,7 +205,7 @@ function getUnitForParameter(parameter) {
                         size="sm"
                         className="h-7 gap-1 text-xs"
                         onClick={() => startEdit(t.parameter, t.minValue, t.maxValue)}
-                        data-testid={`button-edit-threshold-${t.parameter}`}
+                       
                       >
                         <Edit2 className="w-3 h-3" />
                         Edit
@@ -222,7 +218,7 @@ function getUnitForParameter(parameter) {
                           className="h-7 w-7 text-green-600 hover:text-green-700"
                           onClick={() => saveEditRequest(t.parameter)}
                           disabled={isUpdating}
-                          data-testid={`button-save-threshold-${t.parameter}`}
+                         
                         >
                           <Check className="w-3.5 h-3.5" />
                         </Button>
@@ -231,7 +227,7 @@ function getUnitForParameter(parameter) {
                           size="icon"
                           className="h-7 w-7 text-muted-foreground"
                           onClick={cancelEdit}
-                          data-testid={`button-cancel-threshold-${t.parameter}`}
+                         
                         >
                           <X className="w-3.5 h-3.5" />
                         </Button>
@@ -252,7 +248,7 @@ function getUnitForParameter(parameter) {
                           onChange={(e) => setMinVal(e.target.value)}
                           placeholder="No minimum"
                           className="h-8 text-sm"
-                          data-testid={`input-min-${t.parameter}`}
+                         
                         />
                       ) : (
                         <div className="text-lg font-semibold">
@@ -268,7 +264,7 @@ function getUnitForParameter(parameter) {
                           onChange={(e) => setMaxVal(e.target.value)}
                           placeholder="No maximum"
                           className="h-8 text-sm"
-                          data-testid={`input-max-${t.parameter}`}
+                         
                         />
                       ) : (
                         <div className="text-lg font-semibold">

@@ -8,6 +8,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { SettingsModal } from "@/pages/settings";
 
+// App shell: sidebar navigation (collapsible on desktop, drawer on mobile)
+// plus the shared settings/logout controls.
 export function Layout({ children }) {
   const [location, setLocation] = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -17,7 +19,6 @@ export function Layout({ children }) {
   const { user, logout } = useAuth();
   const { info } = useToast();
 
-  // Load sidebar collapsed state from localStorage
   useEffect(() => {
     const stored = localStorage.getItem("aquawatch_sidebar_collapsed");
     if (stored !== null) {
@@ -25,7 +26,6 @@ export function Layout({ children }) {
     }
   }, []);
 
-  // Save sidebar collapsed state
   const toggleSidebar = () => {
     const newState = !sidebarCollapsed;
     setSidebarCollapsed(newState);
@@ -128,7 +128,6 @@ export function Layout({ children }) {
             );
           })}
 
-          {/* Settings button */}
           {collapsed ? (
             <Tooltip delayDuration={0}>
               <TooltipTrigger asChild>
@@ -155,7 +154,6 @@ export function Layout({ children }) {
             </button>
           )}
 
-          {/* Logout button in nav */}
           {collapsed ? (
             <Tooltip delayDuration={0}>
               <TooltipTrigger asChild>
@@ -188,7 +186,6 @@ export function Layout({ children }) {
             </button>
           )}
 
-          {/* Admin/User section - right after logout */}
           {collapsed ? (
             <Tooltip delayDuration={0}>
               <TooltipTrigger asChild>
@@ -228,7 +225,6 @@ export function Layout({ children }) {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Mobile top bar - sticky */}
       <header className="md:hidden fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-3 bg-sidebar text-sidebar-foreground border-b border-sidebar-border">
         <Link href="/" className="flex items-center gap-2">
           <img src="/logo.jpeg" alt="AquaWatch" className="w-7 h-7 rounded-md object-cover" />
@@ -250,7 +246,6 @@ export function Layout({ children }) {
         </Button>
       </header>
 
-      {/* Mobile drawer backdrop */}
       {sidebarOpen && (
         <div
           className="md:hidden fixed inset-0 z-30 bg-black/50"
@@ -258,7 +253,6 @@ export function Layout({ children }) {
         />
       )}
 
-      {/* Mobile drawer */}
       <aside
         className={[
           "md:hidden fixed top-0 left-0 z-40 h-full w-64 bg-sidebar text-sidebar-foreground flex flex-col",
@@ -266,7 +260,6 @@ export function Layout({ children }) {
           sidebarOpen ? "translate-x-0" : "-translate-x-full",
         ].join(" ")}
       >
-        {/* Mobile Logo */}
         <div className="border-b border-sidebar-border p-4 shrink-0">
           <Link href="/" onClick={() => setSidebarOpen(false)} className="flex items-center gap-3">
             <img src="/logo.jpeg" alt="AquaWatch" className="w-10 h-10 rounded-lg object-cover shrink-0" />
@@ -277,7 +270,6 @@ export function Layout({ children }) {
           </Link>
         </div>
 
-        {/* Scrollable Navigation - includes logout and admin */}
         <div className="flex-1 overflow-y-auto min-h-0">
           <NavContent onNavigate={() => setSidebarOpen(false)} />
         </div>
@@ -285,14 +277,12 @@ export function Layout({ children }) {
 
       <TooltipProvider>
         <div className="flex flex-1 min-h-0 pt-14 md:pt-0 relative">
-          {/* Desktop sidebar - fixed */}
           <aside
             className={[
               "hidden md:flex bg-sidebar text-sidebar-foreground flex-col border-r border-sidebar-border shrink-0 transition-all duration-300 ease-in-out fixed top-0 left-0 h-screen z-10",
               sidebarCollapsed ? "w-16" : "w-56 lg:w-64",
             ].join(" ")}
           >
-            {/* Logo */}
             <div className={["border-b border-sidebar-border", sidebarCollapsed ? "p-4 flex justify-center" : "p-5"].join(" ")}>
               <Link href="/" className={["flex items-center", sidebarCollapsed ? "justify-center" : "gap-3"].join(" ")}>
                 <img src="/logo.jpeg" alt="AquaWatch" className="w-10 h-10 rounded-lg object-cover shrink-0" />
@@ -305,7 +295,6 @@ export function Layout({ children }) {
               </Link>
             </div>
 
-            {/* Collapse toggle button */}
             <div className={["border-b border-sidebar-border", sidebarCollapsed ? "p-2 flex justify-center" : "px-3 py-2"].join(" ")}>
               <Button
                 variant="ghost"
@@ -327,13 +316,11 @@ export function Layout({ children }) {
               </Button>
             </div>
 
-            {/* Navigation with logout and admin - scrollable */}
             <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
               <NavContent collapsed={sidebarCollapsed} />
             </div>
           </aside>
 
-          {/* Main content - scrollable area */}
           <main className={[
             "flex-1 overflow-y-auto relative transition-all duration-300 ease-in-out",
             "md:ml-16 lg:ml-56 lg:ml-64"
@@ -345,7 +332,6 @@ export function Layout({ children }) {
         </div>
       </TooltipProvider>
 
-      {/* Settings Modal */}
       <SettingsModal open={settingsModalOpen} onOpenChange={setSettingsModalOpen} />
     </div>
   );

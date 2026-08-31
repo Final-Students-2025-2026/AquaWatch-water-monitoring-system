@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { PinModal } from "@/components/PinModal";
 import { useToast } from "@/contexts/ToastContext";
 import {
-  Wifi, WifiOff, AlertTriangle, CheckCircle2, Battery, Signal,
+  Wifi, WifiOff, AlertTriangle, CheckCircle2,
   Thermometer, Droplets, Zap, FlaskConical, Activity, Eye,
   MapPin, Clock, Calendar, Plus, Trash2, Cpu,
 } from "lucide-react";
@@ -31,7 +31,6 @@ const paramConfig = [
   { key: "orp",         label: "ORP",   icon: Activity,     unit: "mV"     },
 ];
 
-// Normalize backend reading field names to match frontend expectations
 function normalizeReading(reading) {
   if (!reading) return null;
   return {
@@ -73,16 +72,13 @@ export default function Sensors() {
   const [assignmentDialogOpen, setAssignmentDialogOpen] = useState(false);
   const [selectedSensor, setSelectedSensor] = useState(null);
 
-  // PIN modal state for delete action
   const [pinModalOpen, setPinModalOpen] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
 
-  // Load sensors on mount
   useEffect(() => {
     loadSensors();
   }, []);
 
-  // Poll readings every 5 seconds for live updates (only after sensors are loaded)
   useEffect(() => {
     if (sensors.length === 0) return;
     const interval = setInterval(() => {
@@ -96,7 +92,7 @@ export default function Sensors() {
     try {
       const token = localStorage.getItem("token");
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
       
       const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/devices/?_t=${Date.now()}`, {
         headers: {
@@ -109,20 +105,16 @@ export default function Sensors() {
       if (!response.ok) throw new Error("Failed to load devices");
       const responseData = await response.json();
       
-      // Handle both array responses and paginated responses
       const devices = Array.isArray(responseData) 
         ? responseData 
         : (responseData?.results || responseData?.devices || responseData?.data || []);
       
-      // Transform backend data to match frontend expectations
       const transformedDevices = devices.map(device => ({
-        id: device.device_id || device.id, // Handle both field names
+        id: device.device_id || device.id,
         name: device.device_name || device.device_code,
         location: device.location || "Unknown",
         online: device.is_active,
         status: device.is_active ? "normal" : "offline",
-        battery: 85, // Default values since backend doesn't have these
-        signal: 92,
         lastReadingAt: device.created_at,
         installedAt: device.created_at,
         arduino_mac_address: device.arduino_mac_address || null
@@ -130,7 +122,6 @@ export default function Sensors() {
       
       setSensors(transformedDevices);
       
-      // Load latest readings
       await loadReadings(transformedDevices);
     } catch (error) {
       console.error("Failed to load sensors:", error);
@@ -146,10 +137,9 @@ export default function Sensors() {
     try {
       const token = localStorage.getItem("token");
       
-      // Load latest readings for each device in parallel
       const readingsPromises = devices.map((device) => {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout for readings
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
         
         const url = `${import.meta.env.VITE_BACKEND_URL}/api/readings/latest/?device_id=${device.id}`;
         
@@ -200,7 +190,7 @@ export default function Sensors() {
     try {
       const token = localStorage.getItem("token");
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
       
       const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/devices/`, {
         method: "POST",
@@ -285,7 +275,6 @@ export default function Sensors() {
   }
 
   function handleDeleteRequest(id) {
-    // Open PIN modal instead of immediate delete
     setPendingDeleteId(id);
     setPinModalOpen(true);
   }
@@ -297,7 +286,7 @@ export default function Sensors() {
     try {
       const token = localStorage.getItem("token");
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
       
       const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/devices/${pendingDeleteId}/`, {
         method: "DELETE",
@@ -339,7 +328,7 @@ export default function Sensors() {
           <h2 className="text-3xl font-bold tracking-tight">Sensors</h2>
           <p className="text-muted-foreground text-sm mt-1">Manage and monitor all IoT sensor nodes</p>
         </div>
-        <Button className="gap-2" onClick={() => setDialogOpen(true)} data-testid="button-add-sensor">
+        <Button className="gap-2" onClick={() => setDialogOpen(true)}>
           <Plus className="w-4 h-4" />
           Add Sensor
         </Button>
@@ -378,7 +367,7 @@ export default function Sensors() {
             return (
               <Card
                 key={sensor.id}
-                data-testid={`card-sensor-${sensor.id}`}
+               
                 className={`shadow-sm border ${sc.border} transition-all ${!sensor.online ? "opacity-60" : ""}`}
               >
                 <CardHeader className="pb-3 border-b">
@@ -417,7 +406,7 @@ export default function Sensors() {
                           variant="ghost"
                           size="icon"
                           className="w-6 h-6 text-muted-foreground hover:text-primary"
-                          data-testid={`button-assign-arduino-${sensor.id}`}
+                         
                           onClick={() => openAssignmentDialog(sensor)}
                         >
                           <Cpu className="w-3.5 h-3.5" />
@@ -426,7 +415,7 @@ export default function Sensors() {
                           variant="ghost"
                           size="icon"
                           className="w-6 h-6 text-muted-foreground hover:text-destructive"
-                          data-testid={`button-delete-sensor-${sensor.id}`}
+                         
                           onClick={() => handleDeleteRequest(sensor.id)}
                           disabled={isDeleting}
                         >
@@ -458,13 +447,6 @@ export default function Sensors() {
                   </div>
 
                   <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t">
-                    <div className="flex gap-3">
-                      <BatteryBar level={sensor.battery} />
-                      <div className="flex items-center gap-1">
-                        <Signal className="w-3.5 h-3.5" />
-                        <span>{sensor.signal}%</span>
-                      </div>
-                    </div>
                     <div className="flex gap-3">
                       {sensor.lastReadingAt && !isNaN(new Date(sensor.lastReadingAt).getTime()) && (
                         <span className="flex items-center gap-1">
@@ -503,7 +485,7 @@ export default function Sensors() {
                 placeholder="e.g. Station E"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                data-testid="input-sensor-name"
+               
               />
             </div>
             <div className="space-y-2">
@@ -513,7 +495,7 @@ export default function Sensors() {
                 placeholder="e.g. Ankobra River — Bogoso"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
-                data-testid="input-sensor-location"
+               
               />
             </div>
             <div className="space-y-2">
@@ -523,7 +505,7 @@ export default function Sensors() {
                 placeholder="e.g. AA:BB:CC:DD:EE:FF"
                 value={macAddress}
                 onChange={(e) => setMacAddress(e.target.value)}
-                data-testid="input-arduino-mac"
+               
               />
               <p className="text-xs text-muted-foreground">
                 Enter Arduino MAC address to auto-assign this sensor. Leave empty to assign later.
@@ -535,7 +517,7 @@ export default function Sensors() {
             <Button
               onClick={handleCreate}
               disabled={!name.trim() || !location.trim() || isCreating}
-              data-testid="button-confirm-add-sensor"
+             
             >
               {isCreating ? "Registering…" : "Register Sensor"}
             </Button>
@@ -560,7 +542,7 @@ export default function Sensors() {
                 placeholder="e.g. AA:BB:CC:DD:EE:FF"
                 value={macAddress}
                 onChange={(e) => setMacAddress(e.target.value)}
-                data-testid="input-assignment-mac"
+               
               />
               <p className="text-xs text-muted-foreground">
                 Find your Arduino MAC address on the OLED screen or Serial Monitor
@@ -572,7 +554,7 @@ export default function Sensors() {
             <Button
               onClick={handleAssignArduino}
               disabled={!macAddress.trim()}
-              data-testid="button-confirm-assign-arduino"
+             
             >
               Assign Arduino
             </Button>

@@ -13,7 +13,6 @@ import Historical from "@/pages/historical";
 import Alerts from "@/pages/alerts";
 import Sensors from "@/pages/sensors";
 import Thresholds from "@/pages/thresholds";
-import Settings from "@/pages/settings";
 import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
 
@@ -79,13 +78,6 @@ function Router() {
         <ProtectedRoute>
           <Layout>
             <Thresholds />
-          </Layout>
-        </ProtectedRoute>
-      </Route>
-      <Route path="/settings">
-        <ProtectedRoute>
-          <Layout>
-            <Settings />
           </Layout>
         </ProtectedRoute>
       </Route>

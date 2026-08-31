@@ -19,7 +19,6 @@ export function PinModal({ isOpen, onClose, onVerify, action, description }) {
   const [isVerifying, setIsVerifying] = useState(false);
   const { verifyPin } = useAuth();
 
-  // Reset state when modal opens
   useEffect(() => {
     if (isOpen) {
       setPin("");
@@ -39,7 +38,6 @@ export function PinModal({ isOpen, onClose, onVerify, action, description }) {
 
     setIsVerifying(true);
 
-    // Simulate a brief delay for security feel
     await new Promise((resolve) => setTimeout(resolve, 300));
 
     if (verifyPin(pin)) {
@@ -54,7 +52,7 @@ export function PinModal({ isOpen, onClose, onVerify, action, description }) {
   };
 
   const handlePinChange = (e) => {
-    const value = e.target.value.replace(/\D/g, ""); // Only allow digits
+    const value = e.target.value.replace(/\D/g, "");
     if (value.length <= 6) {
       setPin(value);
       setError("");

@@ -3,6 +3,7 @@ from django.conf import settings
 
 
 class Organization(models.Model):
+    """Top-level entity that owns devices and users."""
     organization_id = models.AutoField(primary_key=True)
     organization_name = models.CharField(max_length=255)
     organization_type = models.CharField(max_length=100)
@@ -18,6 +19,7 @@ class Organization(models.Model):
 
 
 class Device(models.Model):
+    """A physical water-monitoring station, optionally bound to an Arduino."""
     id = models.AutoField(primary_key=True)
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
     device_name = models.CharField(max_length=255)
@@ -39,6 +41,7 @@ class Device(models.Model):
 
 
 class SensorReading(models.Model):
+    """One data snapshot sent from a device at a point in time."""
     id = models.AutoField(primary_key=True)
     device = models.ForeignKey(Device, on_delete=models.CASCADE)
     reading_timestamp = models.DateTimeField(auto_now_add=True)
@@ -61,9 +64,10 @@ class SensorReading(models.Model):
 
 
 class Threshold(models.Model):
+    """Configurable min/max ranges that trigger alerts per sensor type."""
     threshold_id = models.AutoField(primary_key=True)
     device = models.ForeignKey(Device, on_delete=models.CASCADE)
-    sensor_type = models.CharField(max_length=50)  # ph, turbidity, tds, temperature, ec
+    sensor_type = models.CharField(max_length=50)
     min_value = models.FloatField()
     max_value = models.FloatField()
     is_active = models.BooleanField(default=True)
@@ -81,13 +85,14 @@ class Threshold(models.Model):
 
 
 class Alert(models.Model):
+    """Raised when a reading exceeds its configured threshold."""
     alert_id = models.AutoField(primary_key=True)
     reading = models.ForeignKey(SensorReading, on_delete=models.CASCADE)
     device = models.ForeignKey(Device, on_delete=models.CASCADE)
     alert_type = models.CharField(max_length=100)
     alert_message = models.TextField()
-    severity = models.CharField(max_length=50)  # low, medium, high, critical
-    status = models.CharField(max_length=50, default='active')  # active, silenced, resolved
+    severity = models.CharField(max_length=50)
+    status = models.CharField(max_length=50, default='active')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

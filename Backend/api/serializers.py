@@ -15,7 +15,6 @@ class DeviceSerializer(serializers.ModelSerializer):
     organization = serializers.PrimaryKeyRelatedField(required=False, allow_null=True, queryset=Organization.objects.all())
     
     def validate_arduino_mac_address(self, value):
-        """Allow None and empty strings, but validate uniqueness only if provided."""
         if value and value.strip():
             existing = Device.objects.filter(arduino_mac_address=value).first()
             if existing and (not self.instance or existing.id != self.instance.id):

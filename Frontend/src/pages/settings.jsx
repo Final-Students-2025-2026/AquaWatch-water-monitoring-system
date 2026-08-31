@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/contexts/AuthContext";
-import { User, Shield, Bell, Moon, Sun, AlertCircle, Check, X, Settings2, Eye, EyeOff, ChevronLeft, ChevronRight, PanelLeft } from "lucide-react";
+import { User, Shield, Moon, Sun, AlertCircle, Check, X, Settings2, Eye, EyeOff, ChevronLeft, ChevronRight, PanelLeft } from "lucide-react";
 
 export function SettingsModal({ open, onOpenChange }) {
   const { user, updateUser } = useAuth();
@@ -84,13 +84,6 @@ export function SettingsModal({ open, onOpenChange }) {
     document.documentElement.classList.contains("dark")
   );
 
-  // Notifications state
-  const [notifications, setNotifications] = useState({
-    emailAlerts: true,
-    pushAlerts: true,
-    criticalOnly: false,
-  });
-
   const handleProfilePictureUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -132,7 +125,6 @@ export function SettingsModal({ open, onOpenChange }) {
       const trimmedProfilePicture = profilePicture.trim();
       const updatedFields = {};
 
-      // Update company name if changed
       if (trimmedCompanyName !== (user?.company_name || "")) {
         const companyNameResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/change-company-name/`, {
           method: "POST",
@@ -152,7 +144,6 @@ export function SettingsModal({ open, onOpenChange }) {
         updatedFields.company_name = trimmedCompanyName;
       }
 
-      // Update location if changed
       if (trimmedLocation !== (user?.location || "")) {
         const locationResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/change-location/`, {
           method: "POST",
@@ -172,7 +163,6 @@ export function SettingsModal({ open, onOpenChange }) {
         updatedFields.location = trimmedLocation;
       }
 
-      // Update email if changed
       if (trimmedEmail !== (user?.email || "")) {
         const emailResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/change-email/`, {
           method: "POST",
@@ -192,7 +182,6 @@ export function SettingsModal({ open, onOpenChange }) {
         updatedFields.email = trimmedEmail;
       }
 
-      // Update phone if changed
       if (trimmedPhone !== (user?.phone || "")) {
         const phoneResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/change-phone/`, {
           method: "POST",
@@ -212,7 +201,6 @@ export function SettingsModal({ open, onOpenChange }) {
         updatedFields.phone = trimmedPhone;
       }
 
-      // Update profile picture if changed
       if (trimmedProfilePicture !== (user?.profile_picture || "")) {
         const pictureResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/change-profile-picture/`, {
           method: "POST",
@@ -381,17 +369,9 @@ export function SettingsModal({ open, onOpenChange }) {
     localStorage.setItem("aquawatch_theme", newMode ? "dark" : "light");
   };
 
-  const handleNotificationChange = (key) => {
-    setNotifications((prev) => ({
-      ...prev,
-      [key]: !prev[key],
-    }));
-  };
-
   const sections = [
     { id: "profile", label: "Profile", icon: User },
     { id: "security", label: "Security", icon: Shield },
-    { id: "notifications", label: "Notifications", icon: Bell },
     { id: "appearance", label: "Appearance", icon: isDarkMode ? Moon : Sun },
   ];
 
@@ -564,7 +544,8 @@ export function SettingsModal({ open, onOpenChange }) {
                         <User className="w-8 h-8 text-muted-foreground" />
                       )}
                     </div>
-                    <label className="w-14 h-14 rounded-full bg-muted hover:bg-muted/80 flex flex-col items-center justify-center cursor-pointer border-2 border-dashed border-border hover:border-primary/50 transition-colors shrink-0">                      <input
+                    <label className="w-14 h-14 rounded-full bg-muted hover:bg-muted/80 flex flex-col items-center justify-center cursor-pointer border-2 border-dashed border-border hover:border-primary/50 transition-colors shrink-0">
+                      <input
                         type="file"
                         accept="image/*"
                         className="hidden"
@@ -837,51 +818,6 @@ export function SettingsModal({ open, onOpenChange }) {
               </div>
             )}
 
-            {activeSection === "notifications" && (
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-lg font-semibold mb-1">Notification Preferences</h3>
-                  <p className="text-xs text-muted-foreground">Configure how you receive alerts</p>
-                </div>
-
-                <div className="space-y-3 p-3 rounded-lg border border-border bg-card">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label htmlFor="email-alerts" className="text-sm">Email Alerts</Label>
-                      <p className="text-xs text-muted-foreground">Receive alerts via email</p>
-                    </div>
-                    <Switch
-                      id="email-alerts"
-                      checked={notifications.emailAlerts}
-                      onCheckedChange={() => handleNotificationChange("emailAlerts")}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label htmlFor="push-alerts" className="text-sm">Push Notifications</Label>
-                      <p className="text-xs text-muted-foreground">Receive browser push notifications</p>
-                    </div>
-                    <Switch
-                      id="push-alerts"
-                      checked={notifications.pushAlerts}
-                      onCheckedChange={() => handleNotificationChange("pushAlerts")}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label htmlFor="critical-only" className="text-sm">Critical Alerts Only</Label>
-                      <p className="text-xs text-muted-foreground">Only notify for critical severity alerts</p>
-                    </div>
-                    <Switch
-                      id="critical-only"
-                      checked={notifications.criticalOnly}
-                      onCheckedChange={() => handleNotificationChange("criticalOnly")}
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
             {activeSection === "appearance" && (
               <div className="space-y-4">
                 <div>
@@ -917,8 +853,4 @@ export function SettingsModal({ open, onOpenChange }) {
       </DialogContent>
     </Dialog>
   );
-}
-
-export default function Settings() {
-  return null;
 }

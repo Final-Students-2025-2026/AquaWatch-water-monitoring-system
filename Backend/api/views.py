@@ -18,51 +18,41 @@ from .serializers import (
 )
 
 
-# Device Views
+# ────────────────────────── Device CRUD ──────────────────────────
+
+
 class DeviceListCreateView(generics.ListCreateAPIView):
     queryset = Device.objects.filter(is_active=True)
     serializer_class = DeviceSerializer
     permission_classes = [IsAuthenticated]
 
     def get_permissions(self):
-        """Return different permissions based on request method."""
         if self.request.method == 'GET':
-            return [AllowAny()]  # Allow public read access to devices
+            return [AllowAny()]
         return [IsAuthenticated()]
 
     def perform_create(self, serializer):
-        """Automatically assign organization if not provided."""
+        """Assign device to the user's org (or a default one)."""
         from .models import Organization
-        import traceback
-        print(f"DEBUG: perform_create called with data: {self.request.data}")
         try:
-            # Try to use user's organization if available
             org = None
             if hasattr(self.request.user, 'organization_id') and self.request.user.organization_id:
                 try:
                     org = Organization.objects.get(organization_id=self.request.user.organization_id)
-                    print(f"DEBUG: Found user organization: {org.organization_id}")
                 except Organization.DoesNotExist:
-                    print(f"DEBUG: User organization not found")
                     pass
             
-            # Fallback to default organization if user org not found or not available
             if not org:
                 org, _ = Organization.objects.get_or_create(
                     organization_name="Default Organization",
                     defaults={'description': 'Default organization for AquaWatch'}
                 )
-                print(f"DEBUG: Using default organization: {org.organization_id}")
-            # If organization not provided in request, use user's or default
+            
             if 'organization' not in self.request.data:
                 device = serializer.save(organization=org, is_active=True)
             else:
                 device = serializer.save(is_active=True)
-            
-            print(f"DEBUG: Created device with ID: {device.id}, organization: {org.organization_id}, is_active: {device.is_active}")
         except Exception as e:
-            print(f"ERROR: Exception during device creation: {str(e)}")
-            print(f"ERROR: Traceback: {traceback.format_exc()}")
             raise
 
 
@@ -72,27 +62,25 @@ class DeviceDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]
 
     def destroy(self, request, *args, **kwargs):
-        """Soft delete by setting is_active=False instead of hard delete."""
-        print(f"DEBUG: destroy called for device pk: {kwargs.get('pk')}")
+        """Soft-delete: mark inactive instead of removing row."""
         device = self.get_object()
-        print(f"DEBUG: Found device with ID: {device.id}, current is_active: {device.is_active}")
         device.is_active = False
         device.save()
-        print(f"DEBUG: Updated device is_active to False")
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-# Sensor Reading Views
+# ────────────────────────── Sensor Readings ──────────────────────────
+
+
 class SensorReadingListView(generics.ListCreateAPIView):
     serializer_class = SensorReadingSerializer
     permission_classes = [IsAuthenticated]
 
     def get_permissions(self):
-        """Return different permissions based on request method."""
         if self.request.method == 'POST':
             return [AllowAny()]
         if self.request.method == 'GET':
-            return [AllowAny()]  # Allow public read access to sensor data
+            return [AllowAny()]
         return [IsAuthenticated()]
 
     def get_queryset(self):
@@ -102,11 +90,13 @@ class SensorReadingListView(generics.ListCreateAPIView):
         return SensorReading.objects.all()
 
     def create(self, request, *args, **kwargs):
-        """Handle Arduino sensor data POST requests."""
+        """
+        Accept a plain-text POST body from the Arduino:
+          "TEMP:24.5,TDS:120,EC:180,NTU:5.2,PH:7.1,TIER:0,ORP:230"
+        Look up the device by mac_address or device_id query param.
+        """
         try:
-            # Parse plain text format: TEMP:27.1,TDS:77,EC:121,NTU:8.4,PH:0.00,ORP:414,TIER:2
             data_str = request.body.decode('utf-8')
-            print(f"DEBUG POST: Received data: {data_str}")
             data_dict = {}
             
             for item in data_str.split(','):
@@ -114,13 +104,9 @@ class SensorReadingListView(generics.ListCreateAPIView):
                     key, value = item.split(':', 1)
                     data_dict[key.strip()] = value.strip()
             
-            print(f"DEBUG POST: Parsed data: {data_dict}")
-            
-            # Get or create device - try MAC address first, then device_id for backward compatibility
             mac_address = request.query_params.get('mac_address')
             device_id = request.query_params.get('device_id')
             
-            # Get or create organization first
             org, _ = Organization.objects.get_or_create(
                 organization_id=1,
                 defaults={
@@ -131,34 +117,25 @@ class SensorReadingListView(generics.ListCreateAPIView):
             
             device = None
             
-            # Try to find device by MAC address first
             if mac_address:
                 try:
                     device = Device.objects.get(arduino_mac_address=mac_address)
-                    print(f"DEBUG POST: Found device by MAC address: {device.id}")
-                    # Ensure device is active when Arduino posts to it
                     if not device.is_active:
                         device.is_active = True
                         device.save()
                 except Device.DoesNotExist:
-                    print(f"DEBUG POST: No device found with MAC address: {mac_address}")
                     return Response(
                         {'status': 'error', 'message': f'No device found with MAC address: {mac_address}'},
                         status=status.HTTP_404_NOT_FOUND
                     )
-            
-            # Fallback to device_id for backward compatibility
             elif device_id:
-                print(f"DEBUG POST: device_id from query: {device_id}")
                 try:
                     device = Device.objects.get(id=device_id)
-                    # Ensure device is active when Arduino posts to it
                     if not device.is_active:
                         device.is_active = True
                         device.save()
-                    print(f"DEBUG POST: Found device ID: {device.id}")
                 except Device.DoesNotExist:
-                    # Fallback to device_code if numeric ID not found
+                    # Auto-register unknown Arduino by numeric ID
                     device_code = f"ARDUINO_{device_id}"
                     device, created = Device.objects.get_or_create(
                         device_code=device_code,
@@ -166,17 +143,15 @@ class SensorReadingListView(generics.ListCreateAPIView):
                             'device_name': f"Arduino Device {device_id}",
                             'device_type': "IoT Sensor",
                             'organization': org,
-                            'is_active': True  # Ensure new devices are active
+                            'is_active': True
                         }
                     )
-                    print(f"DEBUG POST: Created device from code, ID: {device.id}")
             else:
                 return Response(
                     {'status': 'error', 'message': 'Either mac_address or device_id parameter is required'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
-            # Map Arduino fields to model fields
             reading = SensorReading.objects.create(
                 device=device,
                 temperature_celsius=float(data_dict.get('TEMP', 0)),
@@ -188,25 +163,23 @@ class SensorReadingListView(generics.ListCreateAPIView):
                 alert_reason=f"TIER: {data_dict.get('TIER', 0)}, ORP: {data_dict.get('ORP', 0)}" if int(data_dict.get('TIER', 0)) > 0 else None
             )
             
-            print(f"DEBUG POST: Created reading ID: {reading.id}, timestamp: {reading.reading_timestamp}")
-            
             return Response(
                 {'status': 'success', 'reading_id': reading.id},
                 status=status.HTTP_201_CREATED
             )
         except Exception as e:
-            import traceback
-            error_details = traceback.format_exc()
             return Response(
-                {'status': 'error', 'message': str(e), 'details': error_details},
+                {'status': 'error', 'message': str(e)},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+
+# ────────────────────────── Latest Reading ──────────────────────────
 
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def get_latest_reading(request):
-    """Get the latest reading for a device. Returns most recent by timestamp."""
     device_id = request.query_params.get('device_id')
     if not device_id:
         return Response(
@@ -215,16 +188,13 @@ def get_latest_reading(request):
         )
     
     try:
-        # Try to find device by device_code first (ARDUINO_{device_id})
         device_code = f"ARDUINO_{device_id}"
         device = Device.objects.filter(device_code=device_code).first()
         
-        # If not found by code, try by id
         if not device:
             device = Device.objects.filter(id=device_id).first()
         
         if not device:
-            # Return default values when device not found
             return Response({
                 'reading_id': None,
                 'device_id': int(device_id),
@@ -239,17 +209,8 @@ def get_latest_reading(request):
                 'message': f'Device {device_id} not found'
             }, status=status.HTTP_200_OK)
         
-        # Debug: Check all readings for this device
-        all_readings = SensorReading.objects.filter(device=device)
-        print(f"DEBUG: Total readings for device {device_id} (actual device ID: {device.id}): {all_readings.count()}")
-        if all_readings.exists():
-            latest = all_readings.order_by('-reading_timestamp').first()
-            print(f"DEBUG: Latest reading ID: {latest.id}, timestamp: {latest.reading_timestamp}")
-            print(f"DEBUG: Last 3 readings: {list(all_readings.order_by('-reading_timestamp')[:3].values('id', 'reading_timestamp', 'tds_value'))}")
-        
         reading = SensorReading.objects.filter(device=device).order_by('-reading_timestamp').first()
         if not reading:
-            # Return default values when no readings exist
             return Response({
                 'reading_id': None,
                 'device_id': int(device_id),
@@ -265,7 +226,6 @@ def get_latest_reading(request):
             })
         return Response(SensorReadingSerializer(reading).data)
     except Exception as e:
-        # Return 200 with error message instead of 500
         return Response({
             'reading_id': None,
             'device_id': int(device_id) if device_id else None,
@@ -281,10 +241,12 @@ def get_latest_reading(request):
         }, status=status.HTTP_200_OK)
 
 
+# ────────────────────────── Readings History ──────────────────────────
+
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_readings_history(request):
-    """Get readings history for a device."""
     device_id = request.query_params.get('device_id')
     hours = int(request.query_params.get('hours', 24))
     
@@ -303,14 +265,15 @@ def get_readings_history(request):
         
         return Response(SensorReadingSerializer(readings, many=True).data)
     except Exception as e:
-        # Return 200 with empty array instead of 500
         return Response({
             'data': [],
             'message': f'Error retrieving readings history: {str(e)}'
         }, status=status.HTTP_200_OK)
 
 
-# Threshold Views
+# ────────────────────────── Thresholds ──────────────────────────
+
+
 class ThresholdListCreateView(generics.ListCreateAPIView):
     serializer_class = ThresholdSerializer
     permission_classes = [IsAuthenticated]
@@ -328,7 +291,9 @@ class ThresholdDetailView(generics.RetrieveUpdateAPIView):
     permission_classes = [IsAuthenticated]
 
 
-# Alert Views
+# ────────────────────────── Alerts ──────────────────────────
+
+
 class AlertListView(generics.ListAPIView):
     serializer_class = AlertSerializer
     permission_classes = [IsAuthenticated]
@@ -352,24 +317,26 @@ class AlertDetailView(generics.RetrieveUpdateAPIView):
     permission_classes = [IsAuthenticated]
 
 
-# Organization Views
+# ────────────────────────── Organizations ──────────────────────────
+
+
 class OrganizationListView(generics.ListAPIView):
     queryset = Organization.objects.all()
     serializer_class = OrganizationSerializer
     permission_classes = [IsAuthenticated]
 
 
-# Dashboard Views
+# ────────────────────────── Dashboard & Export ──────────────────────────
+
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def dashboard_summary(request):
-    """Get dashboard summary statistics."""
     try:
         total_devices = Device.objects.filter(is_active=True).count()
         active_alerts = Alert.objects.filter(status='active').count()
         total_readings = SensorReading.objects.count()
         
-        # Get latest reading
         latest_reading = SensorReading.objects.first()
         latest_data = None
         if latest_reading:
@@ -382,7 +349,6 @@ def dashboard_summary(request):
             'latest_reading': latest_data
         })
     except Exception as e:
-        # Return 200 with default values instead of 500
         return Response({
             'total_devices': 0,
             'active_alerts': 0,
@@ -392,11 +358,10 @@ def dashboard_summary(request):
         }, status=status.HTTP_200_OK)
 
 
-# Data Export Views
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def export_readings_csv(request):
-    """Export sensor readings to CSV file."""
+    """Stream the recent readings out as a downloadable CSV file."""
     device_id = request.query_params.get('device_id')
     hours = int(request.query_params.get('hours', 24))
     
@@ -437,11 +402,12 @@ def export_readings_csv(request):
         )
 
 
-# Arduino Device Assignment Views
+# ────────────────────────── Arduino Assignment ──────────────────────────
+
+
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def get_arduino_assigned_device(request):
-    """Arduino calls this on startup to get its assigned device_id."""
     mac_address = request.query_params.get('mac_address')
     
     if not mac_address:
@@ -451,21 +417,9 @@ def get_arduino_assigned_device(request):
         )
     
     try:
-        # Debug logging
-        print(f"DEBUG: Looking for device with MAC: {mac_address}")
-        
-        # First try without is_active filter to see if device exists
-        device_any = Device.objects.filter(arduino_mac_address=mac_address).first()
-        if device_any:
-            print(f"DEBUG: Found device with MAC, is_active: {device_any.is_active}, device_id: {device_any.id}")
-        else:
-            print(f"DEBUG: No device found with MAC: {mac_address}")
-        
-        # Find device assigned to this Arduino MAC address (must be active)
         device = Device.objects.filter(arduino_mac_address=mac_address, is_active=True).first()
         
         if device:
-            print(f"DEBUG: Returning assigned device: {device.id}")
             return Response({
                 'device_id': device.id,
                 'device_name': device.device_name,
@@ -473,7 +427,6 @@ def get_arduino_assigned_device(request):
                 'assigned': True
             })
         else:
-            print(f"DEBUG: No active device assigned for MAC: {mac_address}")
             return Response({
                 'assigned': False,
                 'message': 'No device assigned to this Arduino. Please assign via dashboard.'
@@ -488,7 +441,6 @@ def get_arduino_assigned_device(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def assign_arduino_to_device(request):
-    """Assign Arduino to a device via dashboard."""
     device_id = request.data.get('device_id')
     mac_address = request.data.get('mac_address')
     
@@ -499,10 +451,8 @@ def assign_arduino_to_device(request):
         )
     
     try:
-        # Remove Arduino from any previous device assignment
         Device.objects.filter(arduino_mac_address=mac_address).update(arduino_mac_address=None)
         
-        # Assign Arduino to the specified device
         device = Device.objects.get(id=device_id)
         device.arduino_mac_address = mac_address
         device.save()
@@ -527,7 +477,6 @@ def assign_arduino_to_device(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def unassign_arduino(request):
-    """Remove Arduino assignment from a device."""
     device_id = request.data.get('device_id')
     
     if not device_id:
@@ -562,10 +511,14 @@ def unassign_arduino(request):
             {'error': f'Error unassigning Arduino: {str(e)}'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+
+
+# ────────────────────────── Analytics ──────────────────────────
+
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def analytics_summary(request):
-    """Get analytics summary for sensor data."""
     device_id = request.query_params.get('device_id')
     hours = int(request.query_params.get('hours', 24))
     
@@ -582,7 +535,6 @@ def analytics_summary(request):
                 'statistics': {}
             })
         
-        # Calculate statistics
         readings_list = list(readings)
         
         stats = {
@@ -633,132 +585,5 @@ def analytics_summary(request):
     except Exception as e:
         return Response(
             {'error': f'Error generating analytics: {str(e)}'},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
-
-
-# Arduino Device Assignment Views
-@api_view(['GET'])
-@permission_classes([AllowAny])
-def get_arduino_assigned_device(request):
-    """Arduino calls this on startup to get its assigned device_id."""
-    mac_address = request.query_params.get('mac_address')
-    
-    if not mac_address:
-        return Response(
-            {'error': 'mac_address parameter is required'},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-    
-    try:
-        # Debug logging
-        print(f"DEBUG: Looking for device with MAC: {mac_address}")
-        
-        # First try without is_active filter to see if device exists
-        device_any = Device.objects.filter(arduino_mac_address=mac_address).first()
-        if device_any:
-            print(f"DEBUG: Found device with MAC, is_active: {device_any.is_active}, device_id: {device_any.id}")
-        else:
-            print(f"DEBUG: No device found with MAC: {mac_address}")
-        
-        # Find device assigned to this Arduino MAC address (must be active)
-        device = Device.objects.filter(arduino_mac_address=mac_address, is_active=True).first()
-        
-        if device:
-            print(f"DEBUG: Returning assigned device: {device.id}")
-            return Response({
-                'device_id': device.id,
-                'device_name': device.device_name,
-                'device_code': device.device_code,
-                'assigned': True
-            })
-        else:
-            print(f"DEBUG: No active device assigned for MAC: {mac_address}")
-            return Response({
-                'assigned': False,
-                'message': 'No device assigned to this Arduino. Please assign via dashboard.'
-            })
-    except Exception as e:
-        return Response(
-            {'error': f'Error getting assigned device: {str(e)}'},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
-
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def assign_arduino_to_device(request):
-    """Assign Arduino to a device via dashboard."""
-    device_id = request.data.get('device_id')
-    mac_address = request.data.get('mac_address')
-    
-    if not device_id or not mac_address:
-        return Response(
-            {'error': 'device_id and mac_address are required'},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-    
-    try:
-        # Remove Arduino from any previous device assignment
-        Device.objects.filter(arduino_mac_address=mac_address).update(arduino_mac_address=None)
-        
-        # Assign Arduino to the specified device
-        device = Device.objects.get(id=device_id)
-        device.arduino_mac_address = mac_address
-        device.save()
-        
-        return Response({
-            'success': True,
-            'message': f'Arduino assigned to device {device.device_name}',
-            'device_id': device.id
-        })
-    except Device.DoesNotExist:
-        return Response(
-            {'error': 'Device not found'},
-            status=status.HTTP_404_NOT_FOUND
-        )
-    except Exception as e:
-        return Response(
-            {'error': f'Error assigning Arduino: {str(e)}'},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
-
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def unassign_arduino(request):
-    """Remove Arduino assignment from a device."""
-    device_id = request.data.get('device_id')
-    
-    if not device_id:
-        return Response(
-            {'error': 'device_id is required'},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-    
-    try:
-        device = Device.objects.get(id=device_id)
-        mac_address = device.arduino_mac_address
-        
-        if mac_address:
-            device.arduino_mac_address = None
-            device.save()
-            return Response({
-                'success': True,
-                'message': 'Arduino unassigned from device'
-            })
-        else:
-            return Response({
-                'success': False,
-                'message': 'No Arduino assigned to this device'
-            })
-    except Device.DoesNotExist:
-        return Response(
-            {'error': 'Device not found'},
-            status=status.HTTP_404_NOT_FOUND
-        )
-    except Exception as e:
-        return Response(
-            {'error': f'Error unassigning Arduino: {str(e)}'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )

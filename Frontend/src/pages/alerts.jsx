@@ -38,7 +38,6 @@ export default function Alerts() {
       });
       if (!response.ok) throw new Error("Failed to fetch alerts");
       const data = await response.json();
-      // Handle both array responses and paginated responses
       setAlertsArray(Array.isArray(data) ? data : (data?.results || data?.alerts || data?.data || []));
     } catch (error) {
       console.error("Failed to load alerts:", error);
@@ -84,7 +83,6 @@ export default function Alerts() {
     try {
       const token = localStorage.getItem("token");
       if (!isSilenced) {
-        // Silence: Acknowledge all active alerts
         if (activeAlerts.length === 0) {
           setIsUpdating(false);
           return;
@@ -105,7 +103,6 @@ export default function Alerts() {
         setIsSilenced(true);
         success(`${activeAlerts.length} alert${activeAlerts.length > 1 ? "s" : ""} silenced`);
       } else {
-        // Unsilence: Restore all acknowledged alerts to active
         if (acknowledgedAlerts.length === 0) {
           setIsSilenced(false);
           setIsUpdating(false);
@@ -152,7 +149,7 @@ export default function Alerts() {
           variant={isSilenced ? "default" : "outline"}
           size="sm"
           className="gap-2"
-          data-testid="button-silence-all"
+         
           onClick={handleSilenceAll}
           disabled={isUpdating || (!isSilenced && activeAlerts.length === 0) || (isSilenced && acknowledgedAlerts.length === 0)}
         >
@@ -172,7 +169,7 @@ export default function Alerts() {
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
         {summaryCards.map(({ label, count, icon: Icon, color, bg }) => (
-          <Card key={label} className="shadow-sm" data-testid={`card-alert-${label.toLowerCase()}`}>
+          <Card key={label} className="shadow-sm">
             <CardContent className="p-4 sm:p-5 flex items-center gap-3 sm:gap-4">
               <div className={`p-2 sm:p-2.5 rounded-lg ${bg} shrink-0`}>
                 <Icon className={`w-5 h-5 ${color}`} />
@@ -203,7 +200,7 @@ export default function Alerts() {
             alertsArray.map((alert) => (
             <div
               key={alert.alert_id}
-              data-testid={`alert-item-${alert.alert_id}`}
+             
               className={`border-l-4 rounded-xl border border-border p-4 transition-all ${severityClass(alert.severity)}`}
             >
               <div className="flex items-start justify-between gap-4">
@@ -244,7 +241,7 @@ export default function Alerts() {
                     <Button
                       size="sm"
                       variant="outline"
-                      data-testid={`button-acknowledge-${alert.alert_id}`}
+                     
                       onClick={() => handleUpdate(alert.alert_id, "acknowledged")}
                       disabled={isUpdating}
                     >
@@ -253,7 +250,7 @@ export default function Alerts() {
                     <Button
                       size="sm"
                       variant="destructive"
-                      data-testid={`button-resolve-${alert.alert_id}`}
+                     
                       onClick={() => handleUpdate(alert.alert_id, "resolved")}
                       disabled={isUpdating}
                     >
@@ -266,7 +263,7 @@ export default function Alerts() {
                     size="sm"
                     variant="outline"
                     className="shrink-0 text-green-600 border-green-500 hover:bg-green-50"
-                    data-testid={`button-resolve-ack-${alert.alert_id}`}
+                   
                     onClick={() => handleUpdate(alert.alert_id, "resolved")}
                     disabled={isUpdating}
                   >

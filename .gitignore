@@ -11,6 +11,17 @@ out-tsc
 # dependencies
 node_modules
 
+# environment / secrets
+.env
+.env.*
+!.env.example
+
+# python
+__pycache__/
+*.pyc
+venv/
+.venv/
+
 # IDEs and editors
 /.idea
 .project

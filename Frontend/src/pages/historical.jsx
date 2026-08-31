@@ -73,7 +73,6 @@ export default function Historical() {
           }
         });
         const devicesData = devicesResponse.ok ? await devicesResponse.json() : [];
-        // Handle both array responses and paginated responses
         const devices = Array.isArray(devicesData) ? devicesData : (devicesData?.results || devicesData?.devices || devicesData?.data || []);
         
         if (devices.length === 0 || !devices[0]?.device_id) {
@@ -98,7 +97,6 @@ export default function Historical() {
           const historyData = await historyResponse.json();
           const historyReadings = Array.isArray(historyData?.readings) ? historyData.readings : [];
           
-          // Transform backend data to match frontend expectations
           const transformedTrends = historyReadings.map(r => ({
             label: new Date(r.reading_timestamp).getHours(),
             ec: r.ec_value,
@@ -106,7 +104,7 @@ export default function Historical() {
             tds: r.tds_value,
             turbidity: r.turbidity_value,
             temperature: r.temperature_celsius,
-            orp: null // Backend doesn't have ORP
+            orp: null
           }));
           
           const transformedReadings = historyReadings.map(r => ({
@@ -182,7 +180,7 @@ export default function Historical() {
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <Select value={period} onValueChange={(v) => setPeriod(v)}>
-            <SelectTrigger className="w-36" data-testid="select-period">
+            <SelectTrigger className="w-36">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -195,7 +193,7 @@ export default function Historical() {
             variant="outline"
             size="sm"
             className="gap-2"
-            data-testid="button-export-csv"
+           
             disabled={!readings || readings.length === 0}
             onClick={() => readings && exportCsv(readings)}
           >
@@ -213,7 +211,7 @@ export default function Historical() {
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           {stats.map(({ key, label, twColor, safe, unit, avg, min, max }) => (
-            <Card key={key} className="shadow-sm" data-testid={`card-stat-${key}`}>
+            <Card key={key} className="shadow-sm">
               <CardContent className="p-3 md:p-4">
                 <div className="text-xs text-muted-foreground mb-1 truncate">{label}{unit ? ` (${unit})` : ""}</div>
                 <div className={`text-xl md:text-2xl font-bold ${twColor}`}>{avg}</div>

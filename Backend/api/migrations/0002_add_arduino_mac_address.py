@@ -1,11 +1,9 @@
-# Generated migration for Arduino MAC address assignment
-
 from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('api', '0001_initial'),  # This should reference your existing initial migration
+        ('api', '0001_initial'),
     ]
 
     operations = [

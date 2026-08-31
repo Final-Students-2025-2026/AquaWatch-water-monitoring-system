@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, useRef } from "react";
 
 const AuthContext = createContext(null);
 
-// Decode JWT token and check if expired
+// Decode the JWT payload to check whether the access token has expired.
 function isTokenExpired(token) {
   if (!token) return true;
   try {
@@ -24,14 +24,12 @@ export function AuthProvider({ children }) {
   const [isLoading, setIsLoading] = useState(true);
   const [inactivityWarning, setInactivityWarning] = useState(null);
 
-  // Inactivity timer refs
   const inactivityTimerRef = useRef(null);
   const warningTimerRef = useRef(null);
   const hasWarnedRef = useRef(false);
 
-  // Reset inactivity timer
   const resetInactivityTimer = () => {
-    // Clear existing timers
+    // Warn after 9 minutes, log out after 10 if the user has been idle.
     if (inactivityTimerRef.current) {
       clearTimeout(inactivityTimerRef.current);
     }
@@ -41,30 +39,25 @@ export function AuthProvider({ children }) {
     hasWarnedRef.current = false;
     setInactivityWarning(null);
 
-    // Only set timers if user is authenticated
     if (isAuthenticated) {
-      // Show warning at 9 minutes (540000 ms)
       warningTimerRef.current = setTimeout(() => {
         hasWarnedRef.current = true;
         setInactivityWarning("You will be logged out in 1 minute due to inactivity. Click anywhere or press any key to stay logged in.");
-      }, 540000); // 9 minutes
+      }, 540000);
 
-      // Auto logout at 10 minutes (600000 ms)
       inactivityTimerRef.current = setTimeout(() => {
         setInactivityWarning(null);
         logout();
-      }, 600000); // 10 minutes
+      }, 600000);
     }
   };
 
-  // Handle user activity to reset timer
   const handleUserActivity = () => {
     if (isAuthenticated) {
       resetInactivityTimer();
     }
   };
 
-  // Set up activity event listeners
   useEffect(() => {
     const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
     
@@ -79,7 +72,6 @@ export function AuthProvider({ children }) {
     };
   }, [isAuthenticated]);
 
-  // Initialize inactivity timer when authentication state changes
   useEffect(() => {
     resetInactivityTimer();
     
@@ -93,8 +85,8 @@ export function AuthProvider({ children }) {
     };
   }, [isAuthenticated]);
 
-  // Check for existing session on mount and validate token expiration
   useEffect(() => {
+    // Restore the session from localStorage on initial load.
     const token = localStorage.getItem("token");
     const storedUser = localStorage.getItem("aquawatch_user");
     if (token && storedUser && !isTokenExpired(token)) {
@@ -112,7 +104,6 @@ export function AuthProvider({ children }) {
     setIsLoading(false);
   }, []);
 
-  // Periodic token expiration check (every 60 seconds)
   useEffect(() => {
     const interval = setInterval(() => {
       const token = localStorage.getItem("token");

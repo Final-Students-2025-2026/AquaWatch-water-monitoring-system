@@ -10,20 +10,19 @@
 #include <DNSServer.h>
 #include <WiFiManager.h>   
 
+// Water-quality station. Reads sensors, shows readings on the OLED,
+// and posts them to the AquaWatch backend. WiFi is configured through
+// the WiFiManager captive portal on first boot.
 char custom_server_url[100] = "https://aquawatch-188s.onrender.com/api/readings/";
 
-// Arduino Assignment Variables
-String assignedDeviceId = "1";  // Default fallback device ID
+String assignedDeviceId = "1";
 String arduinoMacAddress = "";
 
-// ============================================
-// PIN DEFINITIONS 
-// ============================================
-#define WATER_TEMP_PIN  23    // DS18B20 on GPIO 23 
-#define PH_PIN          33    // pH sensor on GPIO 33 
-#define TDS_PIN         34    // TDS sensor on GPIO 34
-#define TURBIDITY_PIN   32    // Turbidity on GPIO 32 
-#define BUZZER_PIN      16    // Buzzer 
+#define WATER_TEMP_PIN  23
+#define PH_PIN          33
+#define TDS_PIN         34
+#define TURBIDITY_PIN   32
+#define BUZZER_PIN      16
 
 OneWire oneWireLiquid(WATER_TEMP_PIN);
 DallasTemperature sensorsLiquid(&oneWireLiquid);
@@ -32,23 +31,15 @@ DallasTemperature sensorsLiquid(&oneWireLiquid);
 #define SCREEN_HEIGHT 64    
 Adafruit_SH1106G display = Adafruit_SH1106G(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 
-// ============================================
-// pH CALIBRATION VALUES - FROM ES LAB 
-// ============================================
-float calibph7 = 2.800;   // Voltage reading in pH 7.0 buffer
-float calibph4 = 3.300;   // Voltage reading in pH 4.0 buffer
-float m, b;               
+float calibph7 = 2.800;
+float calibph4 = 3.300;
+float m, b;
 
-// ============================================
-// WIFI ICON FUNCTION
-// ============================================
 void drawWiFiIcon(int x, int y, bool connected) {
   if (connected) {
     display.drawPixel(x + 2, y + 6, SH110X_WHITE);
-    
     display.drawLine(x + 1, y + 4, x + 3, y + 4, SH110X_WHITE);
     display.drawPixel(x + 2, y + 3, SH110X_WHITE);
-    
     display.drawLine(x, y + 1, x + 4, y + 1, SH110X_WHITE);
     display.drawPixel(x + 1, y, SH110X_WHITE);
     display.drawPixel(x + 2, y, SH110X_WHITE);
@@ -59,11 +50,7 @@ void drawWiFiIcon(int x, int y, bool connected) {
   }
 }
 
-// ============================================
-// ARDUINO ASSIGNMENT FUNCTIONS
-// ============================================
 String getArduinoMacAddress() {
-  // Get MAC address after WiFi is connected for stability
   uint8_t mac[6];
   WiFi.macAddress(mac);
   char macStr[18];
@@ -74,14 +61,7 @@ String getArduinoMacAddress() {
 void displayMacAddressOnOLED() {
   String mac = getArduinoMacAddress();
   
-  Serial.println("\n=================================");
-  Serial.println("ARDUINO MAC ADDRESS");
-  Serial.println("=================================");
-  Serial.print("MAC Address: ");
-  Serial.println(mac);
-  Serial.println("Copy this MAC address to the dashboard");
-  Serial.println("to assign this Arduino to a sensor.");
-  Serial.println("=================================\n");
+  Serial.println("\nMAC Address: " + mac);
   
   display.clearDisplay();
   display.setTextSize(1);
@@ -97,49 +77,32 @@ void displayMacAddressOnOLED() {
 void queryAssignedDevice() {
   String macAddress = getArduinoMacAddress();
   
-  // ============================================
-  // Build URL 
-  // ============================================
   String serverUrl = String(custom_server_url);
   serverUrl.replace("/api/readings/", "/api/arduino/assignment/?mac_address=");
   serverUrl += macAddress;
   
-  Serial.println("\n=================================");
-  Serial.println("QUERYING ASSIGNED DEVICE");
-  Serial.println("=================================");
-  Serial.print("MAC Address: ");
-  Serial.println(macAddress);
-  Serial.print("Backend URL: ");
-  Serial.println(serverUrl);
+  Serial.println("Querying device for MAC: " + macAddress);
   
   HTTPClient http;
   http.begin(serverUrl);
   int httpResponseCode = http.GET();
   
-  Serial.print("HTTP Response Code: ");
+  Serial.print("HTTP Response: ");
   Serial.println(httpResponseCode);
   
   if (httpResponseCode == 200) {
     String response = http.getString();
-    Serial.print("Response: ");
-    Serial.println(response);
+    Serial.println("Response: " + response);
     
-    // Parse JSON response for device_id
     int deviceIdIndex = response.indexOf("\"device_id\":");
     if (deviceIdIndex != -1) {
-      int start = deviceIdIndex + 12; // Skip "device_id":
+      int start = deviceIdIndex + 12;
       int end = response.indexOf(",", start);
       if (end == -1) end = response.indexOf("}", start);
       assignedDeviceId = response.substring(start, end);
-      assignedDeviceId.trim(); // Remove any whitespace
+      assignedDeviceId.trim();
       
-      Serial.println("---------------------------------");
-      Serial.println("✓ DEVICE ASSIGNMENT SUCCESSFUL");
-      Serial.println("---------------------------------");
-      Serial.print("Assigned Device ID: ");
-      Serial.println(assignedDeviceId);
-      Serial.println("Arduino will now send data to this device.");
-      Serial.println("=================================\n");
+      Serial.println("Assigned to device: " + assignedDeviceId);
       
       display.clearDisplay();
       display.setTextSize(1);
@@ -150,41 +113,24 @@ void queryAssignedDevice() {
       display.println(assignedDeviceId);
       display.display();
     } else {
-      Serial.println("---------------------------------");
-      Serial.println("✗ NO DEVICE ID IN RESPONSE");
-      Serial.println("---------------------------------");
-      Serial.println("Backend response missing device_id.");
-      Serial.print("Using default device ID: ");
-      Serial.println(assignedDeviceId);
-      Serial.println("=================================\n");
+      Serial.println("No device_id in response, using default: " + assignedDeviceId);
     }
   } else {
-    Serial.println("---------------------------------");
-    Serial.println("✗ ASSIGNMENT QUERY FAILED");
-    Serial.println("---------------------------------");
-    Serial.println("Could not connect to backend or query failed.");
-    Serial.print("Using default device ID: ");
-    Serial.println(assignedDeviceId);
-    Serial.println("Check WiFi connection and backend URL.");
-    Serial.println("=================================\n");
+    Serial.println("Assignment query failed, using default: " + assignedDeviceId);
   }
   
   http.end();
 }
 
-// ============================================
-// SETUP
-// ============================================
 void setup() {
   Serial.begin(115200);
   delay(1000);
   
-  Serial.println("\n=== SMART WATER LAB: METHOD 1 ACTIVE ===");
+  Serial.println("\n=== AquaWatch Starting ===");
 
   analogReadResolution(12); 
   analogSetAttenuation(ADC_11db); 
 
-  // pH calibration using the two-point method (pH 4.0 and pH 7.0)
   m = (4.01 - 7.00) / (calibph4 - calibph7);
   b = 7.00 - m * calibph7;
 
@@ -204,9 +150,8 @@ void setup() {
   delay(100);
   sensorsLiquid.begin();
 
-  // OLED INITIALIZATION
   if(!display.begin(0x3C, true)) { 
-    Serial.println("OLED Warning: Screen failed.");
+    Serial.println("OLED init failed");
   } else {
     display.clearDisplay();
     display.setTextSize(1);
@@ -218,9 +163,6 @@ void setup() {
     display.display();
   }
 
-  // ============================================
-  // WIFI MANAGER - CONFIGURATION PORTAL
-  // ============================================
   WiFiManager wm;
   wm.resetSettings();
 
@@ -387,7 +329,6 @@ void setup() {
   
   wm.setTitle("WiFi Hotspot");
 
-  // Add a custom parameter for the server URL
   WiFiManagerParameter custom_url_setting("server", "Backend API Server URL", custom_server_url, 100);
   wm.addParameter(&custom_url_setting);
 
@@ -408,48 +349,33 @@ void setup() {
 
   strcpy(custom_server_url, custom_url_setting.getValue());
 
-  // WIFI CONNECTED SUCCESS SCREEN
   display.clearDisplay();
   drawWiFiIcon(118, 0, true);
-  
   display.setTextSize(1);
   display.setTextColor(SH110X_WHITE);
-  
   display.setCursor(0, 15);
   display.println(">> NET LINK OK");
-  
   display.setCursor(0, 32);
   display.println("AquaWatch Cloud");
   display.setCursor(0, 45);
   display.println("Sync Successful!");
-  
   display.display();
   delay(2500);
 
-  // ============================================
-  // ARDUINO ASSIGNMENT
-  // ============================================
-  // Display MAC address for 5 seconds
   displayMacAddressOnOLED();
   delay(5000);
   
-  // Query assigned device from backend
   queryAssignedDevice();
   delay(2000);
 }
 
-// ============================================
-// MAIN LOOP
-// ============================================
 void loop() {
-  // 1. READ WATER TEMPERATURE
   sensorsLiquid.requestTemperatures();
   float waterTemp = sensorsLiquid.getTempCByIndex(0);
   if(waterTemp <= -127.0 || waterTemp > 80.0) {
     waterTemp = 24.7; 
   }
   
-  // 2. READ TDS & CONVERT TO mg/L (PPM)
   int rawTDS = analogRead(TDS_PIN);
   float tdsVoltage = rawTDS * (3.3 / 4095.0);
   float compensationCoefficient = 1.0 + 0.02 * (waterTemp - 25.0);
@@ -458,7 +384,6 @@ void loop() {
   if(tdsPPM < 0) tdsPPM = 0;
   float ecVal = tdsPPM * 1.56; 
 
-  // 3. READ TURBIDITY (NTU)
   int rawTurbidity = analogRead(TURBIDITY_PIN);
   float turbVoltage = rawTurbidity * (3.3 / 4095.0);
   float turbidityNTU = 0.0;
@@ -469,7 +394,7 @@ void loop() {
   }
   if(turbidityNTU < 0) turbidityNTU = 0;
   
-  // 4. READ pH WITH MEDIAN FILTER
+  // pH reading with median filter
   const int numSamples = 40;
   int samples[numSamples];
   for(int i = 0; i < numSamples; i++) {
@@ -496,44 +421,35 @@ void loop() {
   if(phValue > 14.0) phValue = 14.0;
   float orpVal = 400.0 - (phValue * 25.0) + (waterTemp * 0.5);
 
-  // ============================================
-  // WATER QUALITY TIER - BASED ON WHO GUIDELINES
-  // ============================================
   int waterTier = 0;
   String alertReason = "";
   
-  // Check each parameter against WHO guidelines
   if (phValue < 6.5 || phValue > 8.5) {
     waterTier = 2;
     alertReason = "pH out of range (6.5-8.5)";
   } else if (waterTemp > 25.0) {
     waterTier = 1;
-    alertReason = "Temperature > 25°C";
+    alertReason = "Temperature > 25C";
   } else if (turbidityNTU >= 5.0) {
     waterTier = 1;
-    alertReason = "Turbidity ≥ 5 NTU";
+    alertReason = "Turbidity >= 5 NTU";
   } else if (tdsPPM >= 1000) {
     waterTier = 1;
-    alertReason = "TDS ≥ 1000 mg/L";
+    alertReason = "TDS >= 1000 mg/L";
   } else if (ecVal < 50 || ecVal > 500) {
     waterTier = 1;
-    alertReason = "EC out of range (50-500 µS/cm)";
+    alertReason = "EC out of range (50-500)";
   } else {
     waterTier = 0;
-    alertReason = "All parameters within WHO guidelines";
+    alertReason = "All parameters within safe range";
   }
 
   bool isConnected = (WiFi.status() == WL_CONNECTED);
 
-  // ============================================
-  // 5. SEND DATA TO SERVER - USING MAC ADDRESS
-  // ============================================
   if (isConnected) {
     HTTPClient http;
     
-    // Use MAC address instead of device_id
     String macAddress = getArduinoMacAddress();
-    // URL-encode the MAC address by replacing : with %3A
     macAddress.replace(":", "%3A");
     String serverUrl = String(custom_server_url);
     serverUrl.replace("/api/readings/", "/api/readings/?mac_address=");
@@ -541,11 +457,6 @@ void loop() {
     
     http.begin(serverUrl); 
     http.addHeader("Content-Type", "text/plain");
-    
-    Serial.print("POST URL: ");
-    Serial.println(serverUrl);
-    Serial.print("Using mac_address: ");
-    Serial.println(macAddress);
 
     String payload = "TEMP:" + String(waterTemp, 1) + 
                      ",TDS:" + String(tdsPPM, 0) + 
@@ -557,7 +468,7 @@ void loop() {
                      ",ALERT:" + alertReason;
 
     int httpResponseCode = http.POST(payload);
-    Serial.print("Stream Post Status Code: ");
+    Serial.print("POST status: ");
     Serial.println(httpResponseCode);
     
     if (httpResponseCode == 400) {
@@ -568,7 +479,6 @@ void loop() {
     http.end(); 
   }
 
-  // 6. SERIAL MONITOR OUTPUT
   Serial.print("TEMP:"); Serial.print(waterTemp, 1);
   Serial.print(",TDS:"); Serial.print(tdsPPM, 0);
   Serial.print(",EC:"); Serial.print(ecVal, 0);
@@ -578,7 +488,6 @@ void loop() {
   Serial.print(",TIER:"); Serial.print(waterTier);
   Serial.print(",ALERT:"); Serial.println(alertReason);
 
-  // 7. OLED DISPLAY
   display.clearDisplay();
   display.setTextSize(1);
   display.setTextColor(SH110X_WHITE);

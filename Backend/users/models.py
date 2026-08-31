@@ -3,7 +3,6 @@ from django.db import models
 
 
 class User(AbstractUser):
-    """Custom user model for AquaWatch system."""
     phone = models.CharField(max_length=20, blank=True, null=True)
     email = models.EmailField(unique=True, blank=True, null=True)
     company_name = models.CharField(max_length=200, blank=True, null=True)
