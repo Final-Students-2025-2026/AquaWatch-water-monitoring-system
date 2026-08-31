@@ -12,7 +12,6 @@ function isTokenExpired(token) {
     if (!payload) return true;
     const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
     const decoded = JSON.parse(atob(base64));
-    // A token without an exp claim must not be trusted as valid.
     if (!decoded.exp) return true;
     return decoded.exp * 1000 < Date.now();
   } catch (error) {
@@ -89,15 +88,11 @@ export function AuthProvider({ children }) {
   }, [isAuthenticated]);
 
   useEffect(() => {
-    // Any 401 from an authenticated API call must return the user to login.
     setUnauthorizedHandler(() => {
       logout();
       window.location.href = `${import.meta.env.BASE_URL || "/"}#/login`;
     });
 
-    // Restore the session only after confirming the token is still valid
-    // with the server. We never trust localStorage on its own, otherwise a
-    // stale/fake token would let a user straight into the dashboard.
     const restore = async () => {
       const token = localStorage.getItem("token");
       const storedUser = localStorage.getItem("aquawatch_user");
@@ -112,7 +107,6 @@ export function AuthProvider({ children }) {
         setUser(user);
         setIsAuthenticated(true);
       } catch (error) {
-        // The server rejected the token -> the stored session is invalid.
         logout();
       } finally {
         setIsLoading(false);

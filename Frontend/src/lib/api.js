@@ -30,8 +30,6 @@ async function request(path, options = {}) {
   };
 
   if (options.public) {
-    // Public requests (e.g. the auth restore check) never attach Authorization
-    // and never trigger the auto-logout handler.
     delete headers.Authorization;
   }
 
@@ -42,7 +40,6 @@ async function request(path, options = {}) {
       signal: controller.signal,
     });
     if (response.status === 401 && !options.public) {
-      // The token is invalid or expired. Force the user back to login.
       handleUnauthorized();
     }
     if (!response.ok) {
