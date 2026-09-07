@@ -2,6 +2,8 @@ from rest_framework import serializers
 from .models import Organization, Device, SensorReading, Threshold, Alert
 
 
+# ModelSerializer converts Django model instances into JSON for the API.
+# It also validates incoming payloads on POST/PUT requests automatically.
 class OrganizationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Organization
@@ -13,10 +15,11 @@ class DeviceSerializer(serializers.ModelSerializer):
     device_id = serializers.IntegerField(source='id', read_only=True)
     arduino_mac_address = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     organization = serializers.PrimaryKeyRelatedField(required=False, allow_null=True, queryset=Organization.objects.all())
-    
+
+    # Make sure no two active devices share the same MAC address
     def validate_arduino_mac_address(self, value):
         if value and value.strip():
-            existing = Device.objects.filter(arduino_mac_address=value).first()
+            existing = Device.objects.filter(arduino_mac_address=value, is_active=True).first()
             if existing and (not self.instance or existing.id != self.instance.id):
                 raise serializers.ValidationError("A device with this MAC address already exists.")
         return value
@@ -33,6 +36,9 @@ class SensorReadingSerializer(serializers.ModelSerializer):
     device_code = serializers.CharField(source='device.device_code', read_only=True)
     reading_id = serializers.IntegerField(source='id', read_only=True)
     device_id = serializers.IntegerField(source='device.id', read_only=True)
+
+    # Flattens a SensorReading into JSON. The nested device_name/device_code
+    # are read-only so the client gets human-friendly info without sending it back.
     
     class Meta:
         model = SensorReading

@@ -102,6 +102,9 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 100,
 }
 
+# CORS (Cross-Origin Resource Sharing) lets the React frontend on one domain
+# talk to this Django API on another.  In production we allow all origins
+# because the frontend is served from Vercel and the desktop app.
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 

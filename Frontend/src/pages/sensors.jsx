@@ -173,7 +173,12 @@ export default function Sensors() {
         } catch {
           errorData = { detail: errorText };
         }
-        throw new Error(errorData.detail || errorData.message || errorText || "Failed to create device");
+        const fieldErrors = Object.entries(errorData)
+          .filter(([key]) => key !== "detail" && key !== "message")
+          .map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(", ") : value}`)
+          .join("\n");
+        const message = errorData.detail || errorData.message || fieldErrors || errorText || "Failed to create device";
+        throw new Error(message);
       }
       await refreshDevices();
       setDialogOpen(false);
@@ -181,12 +186,12 @@ export default function Sensors() {
       setLocation("");
       setMacAddress("");
       success("Sensor added successfully");
-    } catch (error) {
-      console.error("Failed to create sensor:", error);
-      if (error.name === 'AbortError') {
-        alert("Request timed out. Please check your connection and try again.");
+    } catch (err) {
+      console.error("Failed to create sensor:", err);
+      if (err.name === 'AbortError') {
+        error("Request timed out. Please check your connection and try again.");
       } else {
-        alert(`Failed to create sensor: ${error?.message || "Unknown error"}`);
+        error(`Failed to create sensor: ${err?.message || "Unknown error"}`);
       }
     } finally {
       setIsCreating(false);
@@ -195,7 +200,7 @@ export default function Sensors() {
 
   async function handleAssignArduino() {
     if (!selectedSensor || !macAddress.trim()) {
-      alert("Please enter Arduino MAC address");
+      error("Please enter Arduino MAC address");
       return;
     }
     try {
@@ -217,9 +222,9 @@ export default function Sensors() {
       setAssignmentDialogOpen(false);
       setMacAddress("");
       setSelectedSensor(null);
-    } catch (error) {
-      console.error("Failed to assign Arduino:", error);
-      alert(`Failed to assign Arduino: ${error?.message || "Unknown error"}`);
+    } catch (err) {
+      console.error("Failed to assign Arduino:", err);
+      error(`Failed to assign Arduino: ${err?.message || "Unknown error"}`);
     }
   }
 
@@ -258,9 +263,9 @@ export default function Sensors() {
     } catch (err) {
       console.error("Failed to delete sensor:", err);
       if (err.name === 'AbortError') {
-        alert("Request timed out. Please check your connection and try again.");
+        error("Request timed out. Please check your connection and try again.");
       } else {
-        alert(`Failed to delete sensor: ${err?.message || "Unknown error"}`);
+        error(`Failed to delete sensor: ${err?.message || "Unknown error"}`);
       }
     } finally {
       setIsDeleting(false);

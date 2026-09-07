@@ -19,7 +19,9 @@ class Organization(models.Model):
 
 
 class Device(models.Model):
-    """A physical water-monitoring station, optionally bound to an Arduino."""
+    """A physical water-monitoring station, optionally bound to an Arduino.
+    The arduino_mac_address field links a physical ESP32 to a device record
+    so incoming sensor data gets routed to the right place."""
     id = models.AutoField(primary_key=True)
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
     device_name = models.CharField(max_length=255)
@@ -41,7 +43,9 @@ class Device(models.Model):
 
 
 class SensorReading(models.Model):
-    """One data snapshot sent from a device at a point in time."""
+    """One data snapshot sent from a device at a point in time.
+    Each field stores a float so we keep decimal precision from the sensors.
+    reading_timestamp is set automatically when the row is created."""
     id = models.AutoField(primary_key=True)
     device = models.ForeignKey(Device, on_delete=models.CASCADE)
     reading_timestamp = models.DateTimeField(auto_now_add=True)

@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback } from "rea
 
 const DEFAULT_DEVICE_ID = 11;
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
+// Poll every 5 seconds so the dashboard feels real-time without hammering the server
 const POLL_INTERVAL_MS = 5000;
 
 const THRESHOLDS = {
@@ -15,11 +16,10 @@ const THRESHOLDS = {
 const TelemetryContext = createContext(null);
 
 function calculateSafetyStatus(telemetry, backendFlags = {}) {
-  if (backendFlags.isAlert === true) {
-    const severity = (backendFlags.severity || "").toString().toUpperCase();
+  if (backendFlags.isAlert === true && backendFlags.severity) {
+    const severity = backendFlags.severity.toString().toUpperCase();
     if (severity === "HIGH" || severity === "CRITICAL") return 2;
     if (severity === "MEDIUM" || severity === "WARNING") return 1;
-    return 2;
   }
 
   let violations = 0;
@@ -137,6 +137,9 @@ function normalizeBackendData(data) {
   return normalized;
 }
 
+// This is where we actually hit the backend for the latest reading.
+// React Query could do this too, but a plain fetch inside an interval
+// keeps things simple and gives us full control over the polling cycle.
 async function fetchTelemetryData() {
   const response = await fetch(`${BACKEND_URL}/api/readings/latest/?device_id=${DEFAULT_DEVICE_ID}`);
   if (!response.ok) {
@@ -146,6 +149,9 @@ async function fetchTelemetryData() {
 }
 
 export function TelemetryProvider({ children }) {
+  // All live sensor values live here.  When this state changes, every
+  // component that calls useTelemetry() automatically re-renders with
+  // the new data -- no manual DOM updates needed.
   const [telemetry, setTelemetry] = useState({
     temp: null,
     tds: null,
@@ -161,6 +167,8 @@ export function TelemetryProvider({ children }) {
     hasData: false,
   });
 
+  // history keeps the last 50 readings so we can plot a live trend chart
+  // without needing a separate API call for historical data
   const [history, setHistory] = useState([]);
 
   const processTelemetryData = useCallback((rawData) => {
@@ -238,6 +246,9 @@ export function TelemetryProvider({ children }) {
     }
   }, [processTelemetryData]);
 
+  // useEffect sets up a setInterval that polls the backend every 5 seconds.
+  // The returned cleanup function calls clearInterval so we don't leak
+  // timers when the component unmounts -- a common React gotcha.
   useEffect(() => {
     updateTelemetry();
     const interval = setInterval(updateTelemetry, POLL_INTERVAL_MS);

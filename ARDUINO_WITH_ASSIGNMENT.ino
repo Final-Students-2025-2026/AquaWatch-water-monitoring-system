@@ -31,9 +31,11 @@ DallasTemperature sensorsLiquid(&oneWireLiquid);
 #define SCREEN_HEIGHT 64    
 Adafruit_SH1106G display = Adafruit_SH1106G(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 
-float calibph7 = 2.800;
-float calibph4 = 3.300;
-float m, b;
+  // Calibration voltages from a two-point pH calibration (buffer pH 7 and pH 4).
+  // These get fed into the linear formula  pH = m * voltage + b  later on.
+  float calibph7 = 2.800;
+  float calibph4 = 3.300;
+  float m, b;
 
 void drawWiFiIcon(int x, int y, bool connected) {
   if (connected) {
@@ -128,9 +130,13 @@ void setup() {
   
   Serial.println("\n=== AquaWatch Starting ===");
 
-  analogReadResolution(12); 
-  analogSetAttenuation(ADC_11db); 
+  // ESP32 ADC is 12-bit (0-4095) with 11 dB attenuation so we can read
+  // voltages up to ~3.3 V, which covers all our analog sensor ranges.
+  analogReadResolution(12);
+  analogSetAttenuation(ADC_11db);
 
+  // Two-point linear calibration: slope (m) and intercept (b) so we can
+  // convert any ADC voltage straight into a pH reading (y = mx + b).
   m = (4.01 - 7.00) / (calibph4 - calibph7);
   b = 7.00 - m * calibph7;
 
@@ -370,19 +376,70 @@ void setup() {
 }
 
 void loop() {
+  // Calibration helper: type CALIBRATE in the serial monitor (9600 baud) to
+  // print the raw pH probe voltage repeatedly. Dip the probe in pH 7.00
+  // buffer, note the V7 value; dip in pH 4.01 buffer, note the V4 value.
+  // Update calibph7/calibph4 at the top of the file with those numbers.
+  if (Serial.available()) {
+    String cmd = Serial.readStringUntil('\n');
+    cmd.trim();
+    if (cmd.equalsIgnoreCase("CALIBRATE")) {
+      Serial.println("== pH CALIBRATION MODE ==");
+      Serial.println("Dip probe in pH 7.00, copy the 'V' reading.");
+      Serial.println("Then dip in pH 4.01, copy the 'V' reading.");
+      Serial.println("Type EXIT to stop.");
+      while (true) {
+        if (Serial.available()) {
+          String exitCmd = Serial.readStringUntil('\n');
+          exitCmd.trim();
+          if (exitCmd.equalsIgnoreCase("EXIT")) break;
+        }
+        const int numSamples = 40;
+        int samples[numSamples];
+        for (int i = 0; i < numSamples; i++) {
+          samples[i] = analogRead(PH_PIN);
+          delay(3);
+        }
+        for (int i = 0; i < numSamples - 1; i++) {
+          for (int j = i + 1; j < numSamples; j++) {
+            if (samples[i] > samples[j]) {
+              int temp = samples[i];
+              samples[i] = samples[j];
+              samples[j] = temp;
+            }
+          }
+        }
+        long totalRawPH = 0;
+        for (int i = 10; i < 30; i++) {
+          totalRawPH += samples[i];
+        }
+        float avgRawPH = totalRawPH / 20.0;
+        float voltagePH = avgRawPH * (3.3 / 4095.0);
+        Serial.print("V:");
+        Serial.println(voltagePH, 3);
+        delay(500);
+      }
+      Serial.println("Calibration mode exited.");
+    }
+  }
+
   sensorsLiquid.requestTemperatures();
   float waterTemp = sensorsLiquid.getTempCByIndex(0);
   if(waterTemp <= -127.0 || waterTemp > 80.0) {
     waterTemp = 24.7; 
   }
   
+  // --- TDS Sensor ---
+  // analogRead gives 0-4095. We convert to voltage (0-3.3 V), then apply a
+  // temperature compensation factor so readings stay accurate across temps.
+  // The polynomial formula maps voltage to parts-per-million (ppm).
   int rawTDS = analogRead(TDS_PIN);
   float tdsVoltage = rawTDS * (3.3 / 4095.0);
   float compensationCoefficient = 1.0 + 0.02 * (waterTemp - 25.0);
   float compensatedVoltage = tdsVoltage / compensationCoefficient;
   float tdsPPM = (133.42 * pow(compensatedVoltage, 3) - 255.86 * pow(compensatedVoltage, 2) + 857.39 * compensatedVoltage) * 0.5;
   if(tdsPPM < 0) tdsPPM = 0;
-  float ecVal = tdsPPM * 1.56; 
+  float ecVal = tdsPPM * 1.56;
 
   int rawTurbidity = analogRead(TURBIDITY_PIN);
   float turbVoltage = rawTurbidity * (3.3 / 4095.0);
@@ -394,13 +451,15 @@ void loop() {
   }
   if(turbidityNTU < 0) turbidityNTU = 0;
   
-  // pH reading with median filter
+  // --- pH Sensor with Median Filter ---
+  
   const int numSamples = 40;
   int samples[numSamples];
   for(int i = 0; i < numSamples; i++) {
     samples[i] = analogRead(PH_PIN);
-    delay(3); 
+    delay(3);
   }
+  // Simple insertion sort - keeps things straightforward on a microcontroller
   for(int i = 0; i < numSamples - 1; i++) {
     for(int j = i + 1; j < numSamples; j++) {
       if(samples[i] > samples[j]) {
@@ -410,20 +469,26 @@ void loop() {
       }
     }
   }
+  // Average only the middle 20 samples (index 10-29), trimming 10 on each end
   long totalRawPH = 0;
   for(int i = 10; i < 30; i++) {
     totalRawPH += samples[i];
   }
   float avgRawPH = totalRawPH / 20.0;
-  float voltagePH = avgRawPH * (3.3 / 4095.0); 
-  float phValue = m * voltagePH + b; 
+  // Convert the filtered raw ADC value to voltage, then apply our linear
+  // calibration formula:  pH = m * voltage + b
+  float voltagePH = avgRawPH * (3.3 / 4095.0);
+  float phValue = m * voltagePH + b;
   if(phValue < 0.0) phValue = 0.0;
   if(phValue > 14.0) phValue = 14.0;
   float orpVal = 400.0 - (phValue * 25.0) + (waterTemp * 0.5);
 
+  // --- Water Quality Tier Classification ---
+  // Based on the WHO guidelines, we assign a tier:
+  //   0 = Safe,  1 = Warning,  2 = Critical (At Risk)
   int waterTier = 0;
   String alertReason = "";
-  
+
   if (phValue < 6.5 || phValue > 8.5) {
     waterTier = 2;
     alertReason = "pH out of range (6.5-8.5)";
@@ -446,37 +511,42 @@ void loop() {
 
   bool isConnected = (WiFi.status() == WL_CONNECTED);
 
+  // --- Send Data to Backend ---
+  // We grab the ESP32's MAC address so the Django backend can look up which
+  // device this Arduino is registered to.  The payload is a simple comma-
+  // separated key:value string (not JSON) to keep memory usage low on the
+  // microcontroller.  The server parses this plain text on its end.
   if (isConnected) {
     HTTPClient http;
-    
+
     String macAddress = getArduinoMacAddress();
     macAddress.replace(":", "%3A");
     String serverUrl = String(custom_server_url);
     serverUrl.replace("/api/readings/", "/api/readings/?mac_address=");
     serverUrl += macAddress;
-    
-    http.begin(serverUrl); 
+
+    http.begin(serverUrl);
     http.addHeader("Content-Type", "text/plain");
 
-    String payload = "TEMP:" + String(waterTemp, 1) + 
-                     ",TDS:" + String(tdsPPM, 0) + 
-                     ",EC:" + String(ecVal, 0) + 
-                     ",NTU:" + String(turbidityNTU, 1) + 
-                     ",PH:" + String(phValue, 2) + 
-                     ",ORP:" + String(orpVal, 0) + 
+    String payload = "TEMP:" + String(waterTemp, 1) +
+                     ",TDS:" + String(tdsPPM, 0) +
+                     ",EC:" + String(ecVal, 0) +
+                     ",NTU:" + String(turbidityNTU, 1) +
+                     ",PH:" + String(phValue, 2) +
+                     ",ORP:" + String(orpVal, 0) +
                      ",TIER:" + String(waterTier) +
                      ",ALERT:" + alertReason;
 
     int httpResponseCode = http.POST(payload);
     Serial.print("POST status: ");
     Serial.println(httpResponseCode);
-    
+
     if (httpResponseCode == 400) {
       Serial.println("Assignment failed, using default device_id=1");
       assignedDeviceId = "1";
     }
-    
-    http.end(); 
+
+    http.end();
   }
 
   Serial.print("TEMP:"); Serial.print(waterTemp, 1);

@@ -92,20 +92,22 @@ class SensorReadingListView(generics.ListCreateAPIView):
         return qs
 
     def create(self, request, *args, **kwargs):
-        """
-        Accept a plain-text POST body from the Arduino:
+        """Accept a plain-text POST body from the Arduino:
           "TEMP:24.5,TDS:120,EC:180,NTU:5.2,PH:7.1,TIER:0,ORP:230"
-        Look up the device by mac_address or device_id query param.
-        """
+        We pull mac_address off the query string, look up the matching Device,
+        and save the reading against it.  This is how the ESP32 talks to us --
         try:
+            # The Arduino sends plain text, not JSON, so we split it ourselves
             data_str = request.body.decode('utf-8')
             data_dict = {}
-            
+
             for item in data_str.split(','):
                 if ':' in item:
                     key, value = item.split(':', 1)
                     data_dict[key.strip()] = value.strip()
-            
+
+            # The MAC address comes as a query parameter so the backend can
+            # figure out which device sent this reading
             mac_address = request.query_params.get('mac_address')
             device_id = request.query_params.get('device_id')
             
@@ -118,7 +120,9 @@ class SensorReadingListView(generics.ListCreateAPIView):
             )
             
             device = None
-            
+
+            # Try matching by MAC address first (preferred), then fall back
+            # to device_id.  If neither matches, we return a 404.
             if mac_address:
                 try:
                     device = Device.objects.get(arduino_mac_address=mac_address)
@@ -165,8 +169,8 @@ class SensorReadingListView(generics.ListCreateAPIView):
                 alert_reason=f"TIER: {data_dict.get('TIER', 0)}, ORP: {data_dict.get('ORP', 0)}" if int(data_dict.get('TIER', 0)) > 0 else None
             )
 
-            # Invalidate the cached "latest reading" so the next poll returns
-            # the freshly ingested data.
+            # Invalidate the cached "latest reading" so the next poll picks
+            # up this fresh data immediately instead of serving stale values.
             cache.delete(f'latest_reading_{device.id}')
 
             return Response(

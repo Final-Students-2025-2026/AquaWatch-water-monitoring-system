@@ -15,7 +15,8 @@ const STATUS_DOT = {
 };
 
 export default function Overview() {
-  // Live telemetry from hardware
+  // Pull live data from TelemetryContext -- all these values update
+  // automatically every 5 seconds when new sensor readings arrive
   const {
     temperature,
     tds,
@@ -33,7 +34,8 @@ export default function Overview() {
     getSafetyColor,
   } = useTelemetry();
 
-  // Devices + alerts load via React Query (cached + refetch on focus).
+  // React Query handles caching + refetch-on-focus for device/alert lists.
+  // placeholderData: [] prevents "undefined" errors while the request loads.
   const { data: devicesData, isLoading: devicesLoading } = useQuery({
     queryKey: ["devices"],
     queryFn: api.getDevices,
@@ -234,7 +236,7 @@ export default function Overview() {
         </div>
       </div>
 
-      {/* Charts and sensor list */}
+      {/* Chart fed from the live history array in TelemetryContext */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Trend chart */}
         <Card className="lg:col-span-2 shadow-sm">

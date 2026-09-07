@@ -87,6 +87,9 @@ export function AuthProvider({ children }) {
     };
   }, [isAuthenticated]);
 
+  // On mount, check if we already have a stored token.  If so, verify
+  // it's still valid by calling /api/auth/me/.  This restores the
+  // session after a page reload without forcing the user to log in again.
   useEffect(() => {
     setUnauthorizedHandler(() => {
       logout();
@@ -127,6 +130,9 @@ export function AuthProvider({ children }) {
     return () => clearInterval(interval);
   }, []);
 
+  // login() sends credentials to the Django backend.  On success the
+  // server returns a JWT token plus user object.  We store both in
+  // localStorage so the session survives page refreshes.
   const login = async (username, password) => {
     try {
       const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/login/`, {
