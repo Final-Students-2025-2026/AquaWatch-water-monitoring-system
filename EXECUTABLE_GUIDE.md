@@ -47,10 +47,7 @@ Then open **http://localhost:8000**.
 
 ## Login details
 
-An admin account is created on first run (set in `Backend/.env`):
-
-- Username: **REDACTED**
-- Password: **REDACTED**
+An admin account is created on first run. The credentials are supplied via environment variables in `Backend/.env` (see `Backend/.env.example` for the required keys).
 
 > Change the password after first login from the Settings panel if you wish.
 
